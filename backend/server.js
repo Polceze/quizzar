@@ -10,6 +10,7 @@ import morgan from 'morgan';
 
 // --- Import Routes ---
 import authRoutes from './src/routes/authRoutes.js';
+import userRoutes from './src/routes/userRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -39,6 +40,7 @@ app.get('/', (req, res) => {
 
 // Use the imported authRoutes for all requests starting with /api/auth
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {

@@ -1,20 +1,23 @@
-@baseUrl = http://localhost:5000/api/auth
+### 1. No token (should fail with 401)
+GET http://localhost:5000/api/users/profile
 
-### Register a new user
-POST {{baseUrl}}/register
-Content-Type: application/json
 
-{
-  "email": "paul@example.com",
-  "password": "mypassword123",
-  "role": "student"
-}
+### 2. Invalid token (should fail with 401)
+GET http://localhost:5000/api/users/profile
+Authorization: Bearer invalid_or_expired_token
 
-### Login with the same user
-POST {{baseUrl}}/login
+
+### 3. Valid token (should succeed)
+# Step 1: Login to get a real token
+POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
   "email": "paul@example.com",
   "password": "mypassword123"
 }
+
+###
+# Step 2: Copy the token from the response above and paste it below
+GET http://localhost:5000/api/users/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZGFhYzg0MzFlNzNjM2U1OTVlMGZmNyIsImlhdCI6MTc1OTMzMTkxMSwiZXhwIjoxNzYxOTIzOTExfQ.QRotCgL09e1KYdcEHuD2zAOn-44vVtzEzXqTXd6JfQk
