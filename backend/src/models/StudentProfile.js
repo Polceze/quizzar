@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 
+// Define the StudentProfile schema
 const StudentProfileSchema = new mongoose.Schema({
   // Link to the main User document
   user: {
@@ -20,5 +21,6 @@ const StudentProfileSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
+// Create and export the StudentProfile model
 const StudentProfile = mongoose.model('StudentProfile', StudentProfileSchema);
 export default StudentProfile;

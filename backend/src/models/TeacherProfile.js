@@ -34,7 +34,7 @@ const TeacherProfileSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Unit',
   }],
-  // Payment/Subscription data (for Phase 3)
+  // Payment/Subscription data
   subscriptionTier: {
     type: String,
     default: 'free',
