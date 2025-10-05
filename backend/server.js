@@ -12,6 +12,7 @@ import morgan from 'morgan';
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import unitRoutes from './src/routes/unitRoutes.js';
+import questionRoutes from './src/routes/questionRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -43,6 +44,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/units', unitRoutes);
+app.use('/api/questions', questionRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {
