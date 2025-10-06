@@ -13,6 +13,7 @@ import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import unitRoutes from './src/routes/unitRoutes.js';
 import questionRoutes from './src/routes/questionRoutes.js';
+import examRoutes from './src/routes/examRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/exams', examRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {
