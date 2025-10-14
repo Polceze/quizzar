@@ -20,16 +20,15 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists.' });
     }
 
+    const finalRole = (role === 'teacher') ? 'pending_teacher' : 'student';
+
     const user = await User.create({
       email,
       password,
-      role: role || 'student', // Default to student
+      role: finalRole,
     });
 
     if (user) {
-      // Once user is created, also create their corresponding profile (optional but recommended)
-      // We will implement this profile creation logic in Phase 1, Step 1.5
-
       res.status(201).json({
         _id: user._id,
         email: user.email,
