@@ -2,7 +2,8 @@ import express from 'express';
 import { protect, restrictTo } from '../middleware/authMiddleware.js'; // Import protect and restrictTo
 import { 
     completeTeacherProfile, 
-    completeStudentProfile 
+    completeStudentProfile,
+    getProfile 
 } from '../controllers/profileController.js'; // Import controllers
 
 const router = express.Router();
@@ -11,7 +12,6 @@ const router = express.Router();
 // @route   GET /api/users/profile
 // @access  Private (requires token)
 router.get('/profile', protect, (req, res) => {
-  // req.user is available here due to the `protect` middleware
   res.json({
     _id: req.user._id,
     email: req.user.email,
@@ -34,5 +34,7 @@ router.post(
     restrictTo('student'), // Only students can access this
     completeStudentProfile
 );
+
+router.get('/profile', protect, getProfile);
 
 export default router;

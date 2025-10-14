@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 
 // Import Pages
 import Home from './pages/Home';
@@ -10,6 +11,8 @@ import Register from './pages/Register';
 import StudentDashboard from './pages/student/StudentDashboard';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import NotFound from './pages/NotFound';
+import StudentProfileForm from './pages/student/StudentProfileForm';
+import TeacherProfileGate from './pages/teacher/TeacherProfileGate';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -27,40 +30,37 @@ function App() {
 
   return (
     <Routes>
-      {/* 1. Root Route: Redirects if logged in, otherwise shows Home */}
+      {/* Routes outside of Layout (Auth pages) */}
       <Route path="/" element={
         isAuthenticated 
           ? <Navigate to={getDashboardPath()} replace /> 
           : <Home />
       } />
-      
-      {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="*" element={<NotFound />} /> {/* Keep 404 outside layout to catch all errors */}
 
-      {/* 2. Primary Dashboard Redirect (Handles manual navigation to /dashboard) */}
-      <Route path="/dashboard" element={
-        isAuthenticated 
-          ? <Navigate to={getDashboardPath()} replace />
-          : <Navigate to="/login" replace />
-      } />
 
-      {/* 3. Protected Routes */}
-      <Route element={<ProtectedRoute allowedRoles={['student', 'teacher', 'admin', 'pending_teacher']} />}>
-        
-        {/* Student Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
-        </Route>
+      {/* Protected Routes - Inside Layout */}
+      <Route element={<Layout />}> {/* <-- NEW: Use Layout as the wrapper */}
+        <Route element={<ProtectedRoute allowedRoles={['student', 'teacher', 'admin', 'pending_teacher']} />}>
+          
+          {/* Dashboard Redirects */}
+          <Route path="/dashboard" element={<Navigate to={getDashboardPath()} replace />} />
 
-        {/* Teacher/Admin Routes (Access for PENDING and approved teachers) */}
-        <Route element={<ProtectedRoute allowedRoles={['teacher', 'admin', 'pending_teacher']} />}>
-          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+          {/* Student Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/profile" element={<StudentProfileForm />} /> {/* Add profile route */}
+          </Route>
+
+          {/* Teacher/Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['teacher', 'admin', 'pending_teacher']} />}>
+            <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/profile" element={<TeacherProfileGate />} /> {/* Add profile route with Gate */}
+          </Route>
         </Route>
       </Route>
-      
-      {/* Fallback Route */}
-      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
