@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/useAuth';
 import AddUnitModal from '../../components/AddUnitModal';
+import { Link } from 'react-router-dom';
 
 const UnitsPage = () => {
   const [units, setUnits] = useState([]);
@@ -89,15 +90,15 @@ const UnitsPage = () => {
                 </p>
               </div>
               <div className="space-x-2">
-                <button 
+                <Link 
+                    to={`/teacher/units/${unit._id}/questions`}
                     className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                    onClick={() => alert(`View content for ${unit.code}`)}
                 >
-                    Content
-                </button>
+                    Content ({unit.questionCount || 0})
+                </Link>
                 <button 
                     className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={() => handleDelete(unit._id)} // Implement deletion in step 2
+                    onClick={() => handleDelete(unit._id)}
                 >
                     Delete
                 </button>

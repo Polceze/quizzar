@@ -4,6 +4,7 @@ import {
     createUnit, 
     getTeacherUnits,
     deleteUnit,
+    getUnitDetails,
     requestEnrollment,
     getPendingRequests, 
     handleEnrollmentApproval
@@ -24,13 +25,18 @@ router.route('/')
         getTeacherUnits
     );
 
-// Delete a specific unit
-router.delete(
-    '/:id', 
-    protect, 
-    restrictTo('teacher'), 
-    deleteUnit
-);
+// Manage a single unit by ID (GET and DELETE)
+router.route('/:id')
+    .get( 
+        protect, 
+        restrictTo('teacher'), 
+        getUnitDetails
+    )
+    .delete(
+        protect, 
+        restrictTo('teacher'), 
+        deleteUnit
+    );
 
 
 // 2. Student requests enrollment in a unit

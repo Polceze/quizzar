@@ -13,6 +13,12 @@ const UnitSchema = new mongoose.Schema({
     trim: true,
     uppercase: true,
   },
+  questions: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Question',
+    default: [], 
+    select: false,
+  },
   // The teacher who created and manages this unit
   teacher: {
     type: mongoose.Schema.Types.ObjectId,

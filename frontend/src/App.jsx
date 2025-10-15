@@ -14,6 +14,7 @@ import NotFound from './pages/NotFound';
 import StudentProfileForm from './pages/student/StudentProfileForm';
 import TeacherProfileGate from './pages/teacher/TeacherProfileGate';
 import UnitsPage from './pages/teacher/UnitsPage';
+import QuestionsPage from './pages/teacher/QuestionsPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -59,12 +60,14 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['teacher', 'admin', 'pending_teacher']} />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/profile" element={<TeacherProfileGate />} />
-
-            {/* Unit Management Route*/}
             <Route path="/teacher/units" element={<UnitsPage />} />
+            <Route path="/teacher/units/:unitId/questions" element={<QuestionsPage />} />
           </Route>
         </Route>
       </Route>
+      
+      {/* Fallback Route */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

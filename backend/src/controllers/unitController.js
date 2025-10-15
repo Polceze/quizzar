@@ -1,7 +1,7 @@
 import Unit from '../models/Unit.js';
 import TeacherProfile from '../models/TeacherProfile.js';
-import RegistrationRequest from '../models/RegistrationRequest.js'; // Import the new model
-import StudentProfile from '../models/StudentProfile.js'; // Import StudentProfile
+import RegistrationRequest from '../models/RegistrationRequest.js';
+import StudentProfile from '../models/StudentProfile.js'; 
 import mongoose from 'mongoose';
 
 // @desc    Create a new Unit/Class
@@ -199,10 +199,19 @@ export const handleEnrollmentApproval = async (req, res) => {
 // @access  Private/Teacher
 export const getTeacherUnits = async (req, res) => {
     try {
-        // Find all units where the teacher field matches the logged-in user's ID
-        const units = await Unit.find({ teacher: req.user._id }).populate('teacher', 'email');
+        const units = await Unit.find({ teacher: req.user._id })
+                                .populate('teacher', 'email')
+                                .select('+questions');
 
-        res.status(200).json(units);
+        // For only the count, we calculate it before sending the response:
+        const unitsWithCount = units.map(unit => ({
+            ...unit.toObject(), 
+            questionCount: unit.questions.length 
+        }));
+        
+        // Send the updated array which includes 'questionCount'
+        res.status(200).json(unitsWithCount); 
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -227,6 +236,36 @@ export const deleteUnit = async (req, res) => {
         
         res.status(200).json({ message: 'Unit successfully deleted.' });
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get a single unit's details
+// @route   GET /api/units/:id
+// @access  Private/Teacher
+export const getUnitDetails = async (req, res) => {
+    try {
+        const unitId = req.params.id;
+
+        // Find the unit, ensure it belongs to the teacher, and populate questions count (optional)
+        const unit = await Unit.findOne({ 
+            _id: unitId, 
+            teacher: req.user._id 
+        })
+        .select('+questions'); // Assuming you selectively exclude questions array from default reads
+
+        if (!unit) {
+            return res.status(404).json({ message: 'Unit not found or access denied.' });
+        }
+        
+        // Return the unit, including its name for the frontend
+        res.status(200).json(unit);
+
+    } catch (error) {
+        // Handle invalid ID format error
+        if (error.name === 'CastError') {
+            return res.status(400).json({ message: 'Invalid Unit ID format.' });
+        }
         res.status(500).json({ message: error.message });
     }
 };
