@@ -193,3 +193,40 @@ export const handleEnrollmentApproval = async (req, res) => {
     res.status(500).json({ message: `Transaction failed: ${error.message}` });
   }
 };
+
+// @desc    Get all units created by the logged-in teacher
+// @route   GET /api/units
+// @access  Private/Teacher
+export const getTeacherUnits = async (req, res) => {
+    try {
+        // Find all units where the teacher field matches the logged-in user's ID
+        const units = await Unit.find({ teacher: req.user._id }).populate('teacher', 'email');
+
+        res.status(200).json(units);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Delete a specific unit created by the logged-in teacher
+// @route   DELETE /api/units/:id
+// @access  Private/Teacher
+export const deleteUnit = async (req, res) => {
+    try {
+        const unitId = req.params.id;
+
+        // Ensure the unit exists and belongs to the logged-in teacher
+        const unit = await Unit.findOneAndDelete({ 
+            _id: unitId, 
+            teacher: req.user._id 
+        });
+
+        if (!unit) {
+            return res.status(404).json({ message: 'Unit not found or you do not have permission to delete it.' });
+        }
+        
+        res.status(200).json({ message: 'Unit successfully deleted.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

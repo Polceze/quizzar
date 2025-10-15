@@ -13,6 +13,7 @@ import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import NotFound from './pages/NotFound';
 import StudentProfileForm from './pages/student/StudentProfileForm';
 import TeacherProfileGate from './pages/teacher/TeacherProfileGate';
+import UnitsPage from './pages/teacher/UnitsPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -42,7 +43,7 @@ function App() {
 
 
       {/* Protected Routes - Inside Layout */}
-      <Route element={<Layout />}> {/* <-- NEW: Use Layout as the wrapper */}
+      <Route element={<Layout />}>
         <Route element={<ProtectedRoute allowedRoles={['student', 'teacher', 'admin', 'pending_teacher']} />}>
           
           {/* Dashboard Redirects */}
@@ -57,7 +58,10 @@ function App() {
           {/* Teacher/Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={['teacher', 'admin', 'pending_teacher']} />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-            <Route path="/teacher/profile" element={<TeacherProfileGate />} /> {/* Add profile route with Gate */}
+            <Route path="/teacher/profile" element={<TeacherProfileGate />} />
+
+            {/* Unit Management Route*/}
+            <Route path="/teacher/units" element={<UnitsPage />} />
           </Route>
         </Route>
       </Route>

@@ -2,6 +2,8 @@ import express from 'express';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
 import { 
     createUnit, 
+    getTeacherUnits,
+    deleteUnit,
     requestEnrollment,
     getPendingRequests, 
     handleEnrollmentApproval
@@ -9,35 +11,49 @@ import {
 
 const router = express.Router();
 
-// 1. Teacher creates a new unit
-router.post(
-    '/', 
+// 1. Teacher creates and lists their units (Handles GET /api/units)
+router.route('/')
+    .post(
+        protect, 
+        restrictTo('teacher'), 
+        createUnit
+    )
+    .get( 
+        protect, 
+        restrictTo('teacher'), // Only teachers can manage/list their units
+        getTeacherUnits
+    );
+
+// Delete a specific unit
+router.delete(
+    '/:id', 
     protect, 
     restrictTo('teacher'), 
-    createUnit
+    deleteUnit
 );
+
 
 // 2. Student requests enrollment in a unit
 router.post(
-    '/request-enroll', 
-    protect, 
-    restrictTo('student'), 
-    requestEnrollment
+    '/request-enroll', 
+    protect, 
+    restrictTo('student'), 
+    requestEnrollment
 );
 
 // 3. Teacher Management Routes
 router.get(
-    '/requests/pending', 
-    protect, 
-    restrictTo('teacher'), 
-    getPendingRequests // Fetches all requests for their units
+    '/requests/pending', 
+    protect, 
+    restrictTo('teacher'), 
+    getPendingRequests 
 );
 
 router.put(
-    '/requests/:requestId', 
-    protect, 
-    restrictTo('teacher'), 
-    handleEnrollmentApproval // Approves or rejects a specific request
+    '/requests/:requestId', 
+    protect, 
+    restrictTo('teacher'), 
+    handleEnrollmentApproval 
 );
 
 export default router;
