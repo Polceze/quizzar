@@ -33,45 +33,60 @@ const QuestionsPage = () => {
     }
   };
   
-  // Helper to fetch both the Unit details and its Questions
-  const fetchUnitAndQuestions = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const config = {
-        headers: { Authorization: `Bearer ${token}` },
-      };
-      
-      // 1. Fetch Unit Details (GET /api/units/:unitId)
-      const unitRes = await axios.get(`/api/units/${unitId}`, config);
-      setUnitName(unitRes.data.name);
+  // FIXED: Moved fetch logic inside useEffect to resolve dependency warning
+  useEffect(() => {
+    const fetchUnitAndQuestions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const config = {
+          headers: { Authorization: `Bearer ${token}` },
+        };
+        
+        // 1. Fetch Unit Details (GET /api/units/:unitId)
+        const unitRes = await axios.get(`/api/units/${unitId}`, config);
+        setUnitName(unitRes.data.name);
 
-      // 2. Fetch Questions for the Unit (GET /api/questions/unit/:unitId) - NOTE: We need to define this backend route.
-      const questionsRes = await axios.get(`/api/questions/unit/${unitId}`, config);
-      setQuestions(questionsRes.data);
+        // 2. Fetch Questions for the Unit (GET /api/questions/unit/:unitId)
+        const questionsRes = await axios.get(`/api/questions/unit/${unitId}`, config);
+        setQuestions(questionsRes.data);
 
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to fetch unit and questions.';
-      setError(errorMessage);
-      setUnitName('Error');
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        const errorMessage = err.response?.data?.message || 'Failed to fetch unit and questions.';
+        setError(errorMessage);
+        setUnitName('Error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUnitAndQuestions();
+  }, [unitId, token]); // All dependencies are now properly included
 
   const handleEditClick = (question) => {
       setEditingQuestion(question); 
       setShowModal(true);         
   };
 
-  useEffect(() => {
-    fetchUnitAndQuestions();
-  }, [unitId, token]); // Re-fetch when unitId or token changes
-
   // Function to handle successful question addition
   const handleQuestionAdded = () => {
     setShowModal(false); // Close modal
-    fetchUnitAndQuestions(); // Refresh list
+    // Refresh the list by re-running the useEffect
+    // Since unitId and token haven't changed, we need to force a refresh
+    setLoading(true);
+    // Re-fetch data manually
+    const refreshData = async () => {
+      try {
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const questionsRes = await axios.get(`/api/questions/unit/${unitId}`, config);
+        setQuestions(questionsRes.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to refresh questions.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    refreshData();
   };
 
   if (loading) return <div className="p-8 text-center text-indigo-600">Loading Unit Content...</div>;
@@ -87,7 +102,10 @@ const QuestionsPage = () => {
         <h1 className="text-3xl font-bold text-gray-800">Questions for: {unitName}</h1>
         <button
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingQuestion(null); // Clear any editing state
+            setShowModal(true);
+          }}
         >
           + Add New Question
         </button>
@@ -124,25 +142,23 @@ const QuestionsPage = () => {
                   </button>
                 </div>
               </div>
-              {/* Pass data to the modal component */}
-              {showModal && (
-                  <AddQuestionModal 
-                      unitId={unitId} 
-                      onClose={() => {
-                          setShowModal(false);
-                          setEditingQuestion(null); // Clear editing state on close
-                      }} 
-                      onSuccess={handleQuestionAdded} 
-                      existingQuestion={editingQuestion} // <-- PASS EDITING DATA
-                  />
-              )}
             </div>
           ))}
         </div>
       )}
       
-      {/* Question Creation Modal */}
-      {showModal && <AddQuestionModal unitId={unitId} onClose={() => setShowModal(false)} onSuccess={handleQuestionAdded} />}
+      {/* Question Creation/Editing Modal */}
+      {showModal && (
+        <AddQuestionModal 
+          unitId={unitId} 
+          onClose={() => {
+            setShowModal(false);
+            setEditingQuestion(null); // Clear editing state on close
+          }} 
+          onSuccess={handleQuestionAdded} 
+          existingQuestion={editingQuestion}
+        />
+      )}
     </div>
   );
 };
