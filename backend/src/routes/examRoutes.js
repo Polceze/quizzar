@@ -4,7 +4,8 @@ import {
     createExam, 
     getExamsByUnit, 
     getExamById, 
-    updateExam 
+    updateExam,
+    getTeacherExams 
 } from '../controllers/examController.js';
 
 const router = express.Router();
@@ -14,7 +15,8 @@ const teacherOnly = [protect, restrictTo('teacher')];
 
 // Create Exam
 router.route('/')
-    .post(teacherOnly, createExam);
+    .post(teacherOnly, createExam)
+    .get(teacherOnly, getTeacherExams);
 
 // Get Exams by Unit
 router.route('/unit/:unitId')

@@ -13,7 +13,7 @@ const ExamSchema = new mongoose.Schema({
     ref: 'Unit',
     required: true,
   },
-  title: {
+  name: {
     type: String,
     required: [true, 'Exam title is required.'],
     trim: true,
@@ -34,7 +34,7 @@ const ExamSchema = new mongoose.Schema({
   },
   totalMarks: {
     type: Number,
-    required: [true, 'Total marks are required.'],
+    required: [false, 'Total marks are required.'],
     min: 1,
   },
   // Scheduling/Availability settings

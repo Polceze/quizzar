@@ -15,6 +15,8 @@ import StudentProfileForm from './pages/student/StudentProfileForm';
 import TeacherProfileGate from './pages/teacher/TeacherProfileGate';
 import UnitsPage from './pages/teacher/UnitsPage';
 import QuestionsPage from './pages/teacher/QuestionsPage';
+import ExamCreationPage from './pages/teacher/ExamCreationPage'; 
+import ExamListPage from './pages/teacher/ExamListPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -62,6 +64,10 @@ function App() {
             <Route path="/teacher/profile" element={<TeacherProfileGate />} />
             <Route path="/teacher/units" element={<UnitsPage />} />
             <Route path="/teacher/units/:unitId/questions" element={<QuestionsPage />} />
+            {/* Exam Management Routes */}
+            <Route path="/teacher/exams" element={<ExamListPage />} />
+            <Route path="/teacher/exams/new" element={<ExamCreationPage />} /> 
+            {/* We will add an edit route later: /teacher/exams/:examId/edit */}
           </Route>
         </Route>
       </Route>
