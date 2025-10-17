@@ -5,7 +5,8 @@ import {
     getExamsByUnit, 
     getExamById, 
     updateExam,
-    getTeacherExams 
+    getTeacherExams,
+    deleteExam
 } from '../controllers/examController.js';
 
 const router = express.Router();
@@ -25,7 +26,7 @@ router.route('/unit/:unitId')
 // Get single Exam, Update Exam
 router.route('/:examId')
     .get(teacherOnly, getExamById)
-    .put(teacherOnly, updateExam);
-    // Note: We'll skip DELETE for now, but it would go here.
+    .put(teacherOnly, updateExam)
+    .delete(teacherOnly, deleteExam);
 
 export default router;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/useAuth';
 import { Link } from 'react-router-dom';
@@ -9,29 +9,55 @@ const ExamListPage = () => {
   const [error, setError] = useState(null);
   const { token } = useAuth();
 
+  const fetchExams = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.get('/api/exams', config); 
+      setExams(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch exams.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
-    const fetchExams = async () => {
-      setLoading(true);
+    fetchExams();
+  }, [fetchExams]);
+
+  const handleDelete = async (examId, examName) => {
+      if (!window.confirm(`Are you sure you want to delete the exam: "${examName}"? This action cannot be undone.`)) {
+          return;
+      }
+
       setError(null);
       try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('/api/exams', config); 
-        setExams(res.data);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch exams.');
-      } finally {
-        setLoading(false);
-      }
-    };
+          const config = { headers: { Authorization: `Bearer ${token}` } };
+          
+          // DELETE /api/exams/:examId
+          await axios.delete(`/api/exams/${examId}`, config);
+          
+          alert(`Exam "${examName}" successfully deleted.`);
+          // Refresh the list after successful deletion
+          fetchExams(); 
 
-    fetchExams();
-  }, [token]);
+      } catch (err) {
+          const msg = err.response?.data?.message || 'Failed to delete exam.';
+          setError(msg);
+      }
+  };
 
   if (loading) return <div className="p-8 text-center text-red-600">Loading Exams...</div>;
   if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl">
+      {/* Link back to the Dashboard */}
+      <Link to="/teacher/dashboard" className="text-indigo-600 hover:text-indigo-800 text-sm mb-4 block">
+        &larr; Back to Dashboard
+      </Link>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">My Exams & Quizzes</h1>
         <Link 
@@ -57,7 +83,10 @@ const ExamListPage = () => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-700">{exam.title}</h2>
                 <p className="text-sm text-gray-500">
-                  Unit: {exam.unit?.name || 'N/A'} | Questions: {exam.questions?.length || 0} | Duration: {exam.durationMinutes} mins
+                  Unit: {exam.unit?.name || 'N/A'} 
+                  | Questions: <span className='font-bold'>{exam.questionCount || 0}</span> 
+                  | Marks: <span className='font-bold'>{exam.totalMarks || 0}</span>
+                  | Duration: {exam.durationMinutes} mins
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -73,6 +102,16 @@ const ExamListPage = () => {
                 >
                     Edit/Publish
                 </Link>
+                {/* DELETE BUTTON (only visible if exam is in draft) */}
+                {exam.status === 'draft' && (
+                    <button
+                        onClick={() => handleDelete(exam._id, exam.name || exam.title)}
+                        className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                        disabled={exam.status !== 'draft'} // Disable button if not in draft
+                    >
+                        Delete
+                    </button>
+                )}
               </div>
             </div>
           ))}

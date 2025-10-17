@@ -17,6 +17,7 @@ import UnitsPage from './pages/teacher/UnitsPage';
 import QuestionsPage from './pages/teacher/QuestionsPage';
 import ExamCreationPage from './pages/teacher/ExamCreationPage'; 
 import ExamListPage from './pages/teacher/ExamListPage';
+import ExamEditPage from './pages/teacher/ExamEditPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -67,7 +68,7 @@ function App() {
             {/* Exam Management Routes */}
             <Route path="/teacher/exams" element={<ExamListPage />} />
             <Route path="/teacher/exams/new" element={<ExamCreationPage />} /> 
-            {/* We will add an edit route later: /teacher/exams/:examId/edit */}
+            <Route path="/teacher/exams/:examId/edit" element={<ExamEditPage />} />
           </Route>
         </Route>
       </Route>

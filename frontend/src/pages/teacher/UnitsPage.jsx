@@ -61,6 +61,9 @@ const UnitsPage = () => {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl">
+      <Link to="/teacher/dashboard" className="text-indigo-600 hover:text-indigo-800 text-sm mb-4 block">
+        &larr; Back to Dashboard
+      </Link>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">My Teaching Units</h1>
         <button

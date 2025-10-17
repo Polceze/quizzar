@@ -23,12 +23,38 @@ const TeacherDashboard = () => {
   // Full Teacher Dashboard View (only for role: 'teacher')
   return (
     <div className="p-8 bg-green-100 rounded-lg shadow-xl">
-      <h1 className="text-3xl font-bold text-green-700 mb-4">Teacher Dashboard</h1>
-      <p className="mb-6">Full access granted. Start creating your units and quizzes!</p>
-      {/* Navigation for full teacher features */}
-      <div className="flex space-x-4">
-        <Link to="/teacher/units" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Manage Units</Link>
-        <Link to="/teacher/profile" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">My Profile</Link>
+      <h1 className="text-3xl font-bold text-green-700 mb-6">Teacher Dashboard</h1>
+      <p className="mb-8">Welcome, {user.email}. Manage your units, questions, and exams here.</p>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Card 1: Unit & Question Management */}
+        <Link 
+            to="/teacher/units" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-blue-500"
+        >
+            <h2 className="text-xl font-semibold text-blue-700 mb-2">Manage Units & Questions</h2>
+            <p className="text-gray-600">Create, view, and edit your classes/subjects and their questions.</p>
+        </Link>
+
+        {/* Card 2: Exam Management */}
+        <Link 
+            to="/teacher/exams" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-blue-500"
+        >
+            <h2 className="text-xl font-semibold text-blue-700 mb-2">Manage Exams</h2>
+            <p className="text-gray-600">Create, publish, review, and delete quizzes and tests.</p>
+        </Link>
+        
+        {/* Card 3: Profile/Settings */}
+        <Link 
+            to="/teacher/profile" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-red-800"
+        >
+            <h2 className="text-xl font-semibold text-red-900 mb-2">My Profile & Settings</h2>
+            <p className="text-gray-600">Update account information and view credentials.</p>
+        </Link>
+        
       </div>
     </div>
   );

@@ -34,8 +34,9 @@ const ExamSchema = new mongoose.Schema({
   },
   totalMarks: {
     type: Number,
-    required: [false, 'Total marks are required.'],
-    min: 1,
+    required: [true, 'Total marks are required.'],
+    default: 0,
+    min: 0,
   },
   // Scheduling/Availability settings
   scheduledStart: {

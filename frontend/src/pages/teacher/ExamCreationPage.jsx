@@ -74,6 +74,10 @@ const ExamCreationPage = () => {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
+      {/* Link back to the Exam List */}
+      <Link to="/teacher/exams" className="text-red-600 hover:text-red-800 text-sm mb-4 block">
+        &larr; Back to Exam List
+      </Link>
       <h1 className="text-3xl font-bold mb-6 text-red-700 border-b pb-2">Create New Exam/Quiz</h1>
 
       {error && <p className="text-red-500 mb-4 p-3 bg-red-50 rounded">{error}</p>}
