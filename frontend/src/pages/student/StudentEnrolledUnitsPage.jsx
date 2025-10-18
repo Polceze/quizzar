@@ -62,8 +62,12 @@ const StudentEnrolledUnitsPage = () => {
                             className={`p-4 border rounded-lg shadow-sm bg-green-50 border-green-300`}
                         >
                             <h2 className="text-xl font-semibold text-gray-700">{unit.name} ({unit.code})</h2>
-                            {/* Assuming teacher name is also populated */}
-                            <p className="text-sm text-gray-500 mt-1">Taught by: {unit.teacher?.name || 'N/A'}</p> 
+                            <p className="text-sm text-gray-500 mt-1">
+                                Taught by: <span className="font-medium">
+                                    {/* Access nested full name from the profile */}
+                                    {unit.teacher?.teacherProfile?.fullName || unit.teacher?.email || 'N/A'}
+                                </span> 
+                            </p> 
                         </div>
                     ))}
                 </div>

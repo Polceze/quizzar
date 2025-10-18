@@ -46,6 +46,26 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Virtual for StudentProfile (links the User to their StudentProfile document)
+UserSchema.virtual('studentProfile', {
+    ref: 'StudentProfile',        
+    localField: '_id',            // The User's ID
+    foreignField: 'user',         // The 'user' field in the StudentProfile model
+    justOne: true                 
+});
+
+// Virtual for TeacherProfile (links the User to their TeacherProfile document)
+UserSchema.virtual('teacherProfile', {
+    ref: 'TeacherProfile',        
+    localField: '_id',            // The User's ID
+    foreignField: 'user',         // The 'user' field in the TeacherProfile model
+    justOne: true                 
+});
+
+// Ensure virtuals are included when converting to JSON/Object
+UserSchema.set('toObject', { virtuals: true });
+UserSchema.set('toJSON', { virtuals: true });
+
 const User = mongoose.model('User', UserSchema);
 
 export default User; 

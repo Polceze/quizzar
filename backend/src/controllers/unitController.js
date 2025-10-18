@@ -106,7 +106,15 @@ export const getPendingRequests = async (req, res) => {
       unit: { $in: unitIds }, // Find requests for any of the teacher's units
       status: 'pending',
     })
-    .populate('student', 'email role') // Get student email and role
+    .populate({
+            path: 'student', 
+            select: 'email', // Select email as a fallback
+            populate: {
+                path: 'studentProfile', 
+                model: 'StudentProfile', 
+                select: 'fullName admissionNumber' // Fields we want
+            }
+        })
     .populate('unit', 'name code'); // Get unit name and code
 
     res.status(200).json(pendingRequests);

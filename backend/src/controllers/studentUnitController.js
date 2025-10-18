@@ -9,7 +9,19 @@ export const getEnrolledUnits = async (req, res) => {
     try {
         // Fetch the student profile and populate the unitsEnrolled array
         const profile = await StudentProfile.findOne({ user: studentId })
-            .populate('unitsEnrolled', 'name code teacher'); // Populate unit details
+            .populate({
+                path: 'unitsEnrolled', 
+                select: 'name code teacher', 
+                populate: {
+                    path: 'teacher', 
+                    select: 'email', 
+                    populate: {
+                        path: 'teacherProfile', 
+                        model: 'TeacherProfile', 
+                        select: 'fullName' 
+                    }
+                }
+            });
         
         if (!profile) {
             return res.status(404).json({ message: 'Student profile not found.' });

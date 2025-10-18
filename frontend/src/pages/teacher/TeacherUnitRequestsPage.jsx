@@ -87,7 +87,15 @@ const TeacherUnitRequestsPage = () => {
                                     Request for: {request.unit?.name} ({request.unit?.code})
                                 </h2>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    Student: <span className="font-medium">{request.student?.email || 'N/A'}</span>
+                                    Student: <span className="font-medium">
+                                        {/* Use fullName, fall back to email */}
+                                        {request.student?.studentProfile?.fullName || request.student?.email || 'N/A'} 
+                                    </span>
+                                    {request.student?.studentProfile?.admissionNumber && 
+                                        <span className="ml-4 text-xs bg-gray-200 text-black-700 px-2 py-0.5 rounded-full">
+                                            Adm No: {request.student.studentProfile.admissionNumber}
+                                        </span>
+                                    }
                                 </p>
                             </div>
                             <div className="flex items-center space-x-3">
