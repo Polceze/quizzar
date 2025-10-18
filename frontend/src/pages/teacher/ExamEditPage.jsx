@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
@@ -24,56 +24,57 @@ const ExamEditPage = () => {
         totalPoints: 0
     });
 
+    // FIXED: fetchExamData moved outside and wrapped with useCallback for ESLint compliance
+    const fetchExamData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+            
+            // 1. Fetch Exam Details (GET /api/exams/:examId)
+            const examRes = await axios.get(`/api/exams/${examId}`, config);
+            const fetchedExam = examRes.data;
+            setExam(fetchedExam);
+            setDuration(fetchedExam.durationMinutes);
+
+            // Set initial selection and calculate points from existing exam questions
+            const initialIds = new Set(fetchedExam.questions.map(q => q._id));
+            setSelectedQuestionIds(initialIds);
+
+            const initialPoints = fetchedExam.questions.reduce((sum, q) => sum + q.points, 0);
+            setTotalPoints(initialPoints);
+            
+            // 2. Fetch ALL Available Questions for the Unit (GET /api/questions/unit/:unitId)
+            const unitId = fetchedExam.unit._id; 
+            if (!unitId) {
+                throw new Error("Exam data is corrupt: Missing Unit ID.");
+            }                
+            const questionsRes = await axios.get(`/api/questions/unit/${unitId}`, config);
+            setAvailableQuestions(questionsRes.data);
+
+            // Set initial state after all data is loaded
+            setInitialState({
+                selectedQuestionIds: new Set(initialIds),
+                duration: fetchedExam.durationMinutes,
+                totalPoints: initialPoints
+            });
+
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Failed to load exam details.';
+            setError(msg);
+            // If the exam is not found, navigate back to the list
+            if (err.response?.status === 404 || err.response?.status === 403) {
+                 navigate('/teacher/exams', { replace: true, state: { error: msg } });
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [examId, token, navigate]); // Include all dependencies
+
     // --- Data Fetching ---
     useEffect(() => {
-        const fetchExamData = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                
-                // 1. Fetch Exam Details (GET /api/exams/:examId)
-                const examRes = await axios.get(`/api/exams/${examId}`, config);
-                const fetchedExam = examRes.data;
-                setExam(fetchedExam);
-                setDuration(fetchedExam.durationMinutes);
-
-                // Set initial selection and calculate points from existing exam questions
-                const initialIds = new Set(fetchedExam.questions.map(q => q._id));
-                setSelectedQuestionIds(initialIds);
-
-                const initialPoints = fetchedExam.questions.reduce((sum, q) => sum + q.points, 0);
-                setTotalPoints(initialPoints);
-                
-                // 2. Fetch ALL Available Questions for the Unit (GET /api/questions/unit/:unitId)
-                const unitId = fetchedExam.unit._id; 
-                if (!unitId) {
-                    throw new Error("Exam data is corrupt: Missing Unit ID.");
-                }                
-                const questionsRes = await axios.get(`/api/questions/unit/${unitId}`, config);
-                setAvailableQuestions(questionsRes.data);
-
-                // Set initial state after all data is loaded
-                setInitialState({
-                    selectedQuestionIds: new Set(initialIds),
-                    duration: fetchedExam.durationMinutes,
-                    totalPoints: initialPoints
-                });
-
-            } catch (err) {
-                const msg = err.response?.data?.message || 'Failed to load exam details.';
-                setError(msg);
-                // If the exam is not found, navigate back to the list
-                if (err.response?.status === 404 || err.response?.status === 403) {
-                     navigate('/teacher/exams', { replace: true, state: { error: msg } });
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchExamData();
-    }, [examId, token, navigate]);
+    }, [fetchExamData]); // Now only depends on fetchExamData which is stable
 
     // --- Handlers ---
 
@@ -151,7 +152,44 @@ const ExamEditPage = () => {
         }
     };
 
-    // FIXED: Updated disable condition to check for changes AND the original conditions
+    const handlePublish = async () => {
+        if (!exam || exam.status !== 'draft') return;
+
+        if (!window.confirm("WARNING: Publishing the exam will make it available to students. You will not be able to edit the questions or total marks afterward. Proceed?")) {
+            return;
+        }
+
+        setIsSaving(true);
+        setError(null);
+
+        try {
+            const config = { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } };
+            
+            // NOTE: We rely on the totalPoints being calculated and saved by a preceding 'Save Exam Content' action.
+            // We explicitly set the status to 'active' here.
+            const payload = {
+                status: 'active', // <-- CRITICAL: Change status
+                // Optional: Update scheduledStart to current time if you want it immediately available
+                // scheduledStart: new Date().toISOString(), 
+            };
+
+            // PUT /api/exams/:examId
+            await axios.put(`/api/exams/${examId}`, payload, config);
+            
+            alert('Exam successfully published and is now active!');
+            // FIXED: Now we can call fetchExamData to reload data
+            fetchExamData(); 
+            // Or navigate back to the list:
+            // navigate('/teacher/exams'); 
+
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to publish exam.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Check for changes AND the original conditions
     const isSaveDisabled = 
         isSaving || 
         (totalPoints === 0 && availableQuestions.length === 0) ||
@@ -190,7 +228,7 @@ const ExamEditPage = () => {
                             onChange={handleDurationChange}
                             min="1"
                             className="w-16 p-1 border border-gray-300 rounded text-center text-red-600 font-bold"
-                            disabled={isSaving}
+                            disabled={isSaving || exam.status !== 'draft'}
                         />
                     </div>
                     {/* END EDITABLE DURATION FIELD */}
@@ -203,18 +241,38 @@ const ExamEditPage = () => {
             
             {/* Action Bar */}
             <div className="mb-6 flex justify-end space-x-3">
+                {/* Save Content Button */}
                 <button
                     onClick={handleSaveContent}
                     className="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-                    disabled={isSaveDisabled}
-                    title={!hasChanges() ? "No changes to save" : ""}
+                    disabled={isSaveDisabled || exam.status !== 'draft'}
+                    title={!hasChanges() ? "No changes to save" : exam.status !== 'draft' ? "Cannot edit published exam" : ""}
                 >
                     {isSaving ? 'Saving...' : 'Save Exam Content'}
                 </button>
+                
+                {/* Publish Button */}
+                {exam.status === 'draft' && (
+                    <button
+                        onClick={handlePublish}
+                        disabled={isSaving || totalPoints === 0 || selectedQuestionIds.size === 0} 
+                        className="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                        title={selectedQuestionIds.size === 0 ? "Add questions before publishing" : totalPoints === 0 ? "Questions must have points" : ""}
+                    >
+                        {isSaving ? 'Publishing...' : 'Publish Exam'}
+                    </button>
+                )}
+                
+                {/* Display a reminder if published */}
+                {exam.status === 'active' && (
+                    <span className="p-2 text-sm bg-yellow-100 text-yellow-800 rounded-lg font-semibold">
+                        Status: ACTIVE (Read-Only)
+                    </span>
+                )}
             </div>
 
             {/* Show message when no changes */}
-            {!hasChanges() && (
+            {!hasChanges() && exam.status === 'draft' && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-blue-700 text-sm">No changes made to save.</p>
                 </div>
@@ -237,6 +295,7 @@ const ExamEditPage = () => {
                                     question={q} 
                                     isSelected={true} 
                                     onToggle={handleToggleQuestion}
+                                    disabled={exam.status !== 'draft'}
                                 />
                             ))
                         )}
@@ -260,6 +319,7 @@ const ExamEditPage = () => {
                                     question={q} 
                                     isSelected={false} 
                                     onToggle={handleToggleQuestion}
+                                    disabled={exam.status !== 'draft'}
                                 />
                             ))
                         )}
@@ -271,21 +331,22 @@ const ExamEditPage = () => {
 };
 
 // Simple reusable component for question display
-const QuestionCard = ({ question, isSelected, onToggle }) => {
+const QuestionCard = ({ question, isSelected, onToggle, disabled }) => {
     return (
         <div className={`p-3 border rounded-lg shadow-sm transition duration-150 ${
             isSelected ? 'bg-green-50 border-green-400' : 'bg-white hover:bg-gray-50 border-gray-200'
-        }`}>
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
             <p className="text-sm font-medium text-gray-800 line-clamp-2">{question.text}</p>
             <div className="flex justify-between items-center text-xs mt-2">
                 <span className="text-gray-500">{question.questionType} ({question.points} Pts)</span>
                 <button
-                    onClick={() => onToggle(question)}
+                    onClick={() => !disabled && onToggle(question)}
                     className={`px-3 py-1 text-xs rounded transition ${
                         isSelected 
                             ? 'bg-red-500 hover:bg-red-600 text-white' 
                             : 'bg-indigo-500 hover:bg-indigo-600 text-white'
-                    }`}
+                    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={disabled}
                 >
                     {isSelected ? 'Remove' : 'Select'}
                 </button>

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs'; // <-- Import bcrypt
+import bcrypt from 'bcryptjs';
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -29,7 +29,7 @@ const UserSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-  },
+  }
 });
 
 // Mongoose Pre-Save Hook (Middleware) for Hashing

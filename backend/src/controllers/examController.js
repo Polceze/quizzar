@@ -139,7 +139,7 @@ export const getExamById = async (req, res) => {
 export const updateExam = async (req, res) => {
   const { examId } = req.params;
   const teacherId = req.user._id;
-  const { questions, totalMarks, durationMinutes, ...otherUpdates } = req.body;
+  const { questions, totalMarks, durationMinutes, status, ...otherUpdates } = req.body;
 
   try {
     const updatedExam = await Exam.findOneAndUpdate(
@@ -148,6 +148,7 @@ export const updateExam = async (req, res) => {
             questions: questions,
             totalMarks: totalMarks,
             durationMinutes: durationMinutes,
+            ...(status && { status: status }),
             ...otherUpdates // Apply any other safe updates
         },
         { new: true, runValidators: true }

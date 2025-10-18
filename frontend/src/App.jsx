@@ -18,6 +18,10 @@ import QuestionsPage from './pages/teacher/QuestionsPage';
 import ExamCreationPage from './pages/teacher/ExamCreationPage'; 
 import ExamListPage from './pages/teacher/ExamListPage';
 import ExamEditPage from './pages/teacher/ExamEditPage';
+import StudentExamListPage from './pages/student/StudentExamListPage';
+import StudentEnrolledUnitsPage from './pages/student/StudentEnrolledUnitsPage';
+import StudentUnitRequestPage from './pages/student/StudentUnitRequestPage';
+import TeacherUnitRequestsPage from './pages/teacher/TeacherUnitRequestsPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -56,7 +60,10 @@ function App() {
           {/* Student Routes */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
-            <Route path="/student/profile" element={<StudentProfileForm />} /> {/* Add profile route */}
+            <Route path="/student/exams" element={<StudentExamListPage />} />
+            <Route path="/student/units" element={<StudentEnrolledUnitsPage />} />
+            <Route path="/student/units/request" element={<StudentUnitRequestPage />} />
+            <Route path="/student/profile" element={<StudentProfileForm />} />
           </Route>
 
           {/* Teacher/Admin Routes */}
@@ -64,6 +71,7 @@ function App() {
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route path="/teacher/profile" element={<TeacherProfileGate />} />
             <Route path="/teacher/units" element={<UnitsPage />} />
+            <Route path="/teacher/units/requests" element={<TeacherUnitRequestsPage />} />
             <Route path="/teacher/units/:unitId/questions" element={<QuestionsPage />} />
             {/* Exam Management Routes */}
             <Route path="/teacher/exams" element={<ExamListPage />} />
