@@ -31,12 +31,12 @@ const TeacherUnitRequestsPage = () => {
         fetchRequests();
     }, [fetchRequests]);
 
-    const handleAction = async (requestId, action, unitName, studentEmail) => {
+    const handleAction = async (requestId, action, unitName, studentNameOrEmail) => {
         setMessage('');
         setError(null);
         
         const actionText = action === 'approve' ? 'approve' : 'reject';
-        if (!window.confirm(`Are you sure you want to ${actionText} the enrollment request for ${unitName} by ${studentEmail}?`)) {
+        if (!window.confirm(`Are you sure you want to ${actionText} the enrollment request for ${unitName} by ${studentNameOrEmail}?`)) {
             return;
         }
         
@@ -77,43 +77,47 @@ const TeacherUnitRequestsPage = () => {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {requests.map((request) => (
-                        <div
-                            key={request._id}
-                            className={`flex justify-between items-center p-4 border rounded-lg shadow-sm bg-yellow-50 border-yellow-300`}
-                        >
-                            <div>
-                                <h2 className="text-xl font-semibold text-gray-700">
-                                    Request for: {request.unit?.name} ({request.unit?.code})
-                                </h2>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Student: <span className="font-medium">
-                                        {/* Use fullName, fall back to email */}
-                                        {request.student?.studentProfile?.fullName || request.student?.email || 'N/A'} 
-                                    </span>
-                                    {request.student?.studentProfile?.admissionNumber && 
-                                        <span className="ml-4 text-xs bg-gray-200 text-black-700 px-2 py-0.5 rounded-full">
-                                            Adm No: {request.student.studentProfile.admissionNumber}
+                    {requests.map((request) => {
+                        const studentName = request.student?.studentProfile?.fullName || request.student?.email;
+                        
+                        return (
+                            <div
+                                key={request._id}
+                                className={`flex justify-between items-center p-4 border rounded-lg shadow-sm bg-yellow-50 border-yellow-300`}
+                            >
+                                <div>
+                                    <h2 className="text-xl font-semibold text-gray-700">
+                                        Request for: {request.unit?.name} ({request.unit?.code})
+                                    </h2>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        Student: <span className="font-medium">
+                                            {/* Use fullName, fall back to email */}
+                                            {studentName || 'N/A'} 
                                         </span>
-                                    }
-                                </p>
+                                        {request.student?.studentProfile?.admissionNumber && 
+                                            <span className="ml-4 text-xs bg-gray-200 text-black-700 px-2 py-0.5 rounded-full">
+                                                Adm No: {request.student.studentProfile.admissionNumber}
+                                            </span>
+                                        }
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <button
+                                        onClick={() => handleAction(request._id, 'reject', request.unit?.name, studentName)}
+                                        className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
+                                    >
+                                        Reject
+                                    </button>
+                                    <button
+                                        onClick={() => handleAction(request._id, 'approve', request.unit?.name, studentName)}
+                                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition"
+                                    >
+                                        Approve
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-3">
-                                <button
-                                    onClick={() => handleAction(request._id, 'reject', request.unit?.name, request.student?.email)}
-                                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition"
-                                >
-                                    Reject
-                                </button>
-                                <button
-                                    onClick={() => handleAction(request._id, 'approve', request.unit?.name, request.student?.email)}
-                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition"
-                                >
-                                    Approve
-                                </button>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

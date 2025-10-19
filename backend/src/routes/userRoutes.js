@@ -1,7 +1,6 @@
 import express from 'express';
 import { protect, restrictTo } from '../middleware/authMiddleware.js'; // Import protect and restrictTo
-import { 
-    completeTeacherProfile, 
+import {  
     completeStudentProfile,
     getProfile 
 } from '../controllers/profileController.js'; // Import controllers
@@ -21,13 +20,7 @@ router.get('/profile', protect, (req, res) => {
   });
 });
 
-// Profile Completion Routes (Protected)
-router.post(
-    '/teacher-profile', 
-    protect, 
-    restrictTo('teacher'), // Only teachers can access this
-    completeTeacherProfile
-);
+
 router.post(
     '/student-profile', 
     protect, 

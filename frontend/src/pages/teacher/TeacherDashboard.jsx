@@ -57,7 +57,7 @@ const TeacherDashboard = () => {
         
         {/* Card 4: Profile/Settings */}
         <Link 
-            to="/teacher/profile" 
+            to="/teacher/profile/form" 
             className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-red-800"
         >
             <h2 className="text-xl font-semibold text-red-900 mb-2">My Profile & Settings</h2>

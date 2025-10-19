@@ -17,6 +17,7 @@ import examRoutes from './src/routes/examRoutes.js';
 import studentExamRoutes from './src/routes/studentExamRoutes.js';
 import studentUnitRoutes from './src/routes/studentUnitRoutes.js';
 import studentProfileRoutes from './src/routes/studentProfileRoutes.js';
+import teacherRoutes from './src/routes/teacherRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/exams', examRoutes);
 app.use('/api/student', studentExamRoutes);
 app.use('/api/student', studentUnitRoutes);
 app.use('/api/student', studentProfileRoutes);
+app.use('/api/teacher', teacherRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {

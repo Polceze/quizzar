@@ -22,6 +22,7 @@ import StudentExamListPage from './pages/student/StudentExamListPage';
 import StudentEnrolledUnitsPage from './pages/student/StudentEnrolledUnitsPage';
 import StudentUnitRequestPage from './pages/student/StudentUnitRequestPage';
 import TeacherUnitRequestsPage from './pages/teacher/TeacherUnitRequestsPage';
+import TeacherProfileForm from './pages/teacher/TeacherProfileForm';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -73,6 +74,7 @@ function App() {
             <Route path="/teacher/units" element={<UnitsPage />} />
             <Route path="/teacher/units/requests" element={<TeacherUnitRequestsPage />} />
             <Route path="/teacher/units/:unitId/questions" element={<QuestionsPage />} />
+            <Route path="/teacher/profile/form" element={<TeacherProfileForm />} />
             {/* Exam Management Routes */}
             <Route path="/teacher/exams" element={<ExamListPage />} />
             <Route path="/teacher/exams/new" element={<ExamCreationPage />} /> 
