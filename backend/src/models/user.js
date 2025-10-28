@@ -26,6 +26,11 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // NEW: School reference
+  school: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'School'
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -62,10 +67,17 @@ UserSchema.virtual('teacherProfile', {
     justOne: true                 
 });
 
+// NEW: Virtual for School (links the User to their School document)
+UserSchema.virtual('userSchool', {
+  ref: 'School',
+  localField: 'school',
+  foreignField: '_id',
+  justOne: true
+});
+
 // Ensure virtuals are included when converting to JSON/Object
 UserSchema.set('toObject', { virtuals: true });
 UserSchema.set('toJSON', { virtuals: true });
 
 const User = mongoose.model('User', UserSchema);
-
-export default User; 
+export default User;
