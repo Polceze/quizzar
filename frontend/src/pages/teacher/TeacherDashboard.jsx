@@ -63,6 +63,16 @@ const TeacherDashboard = () => {
             <h2 className="text-xl font-semibold text-red-900 mb-2">My Profile & Settings</h2>
             <p className="text-gray-600">Update account information and view credentials.</p>
         </Link>
+
+        {user.role === 'admin' && (
+          <Link 
+            to="/admin/school" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-purple-500"
+          >
+            <h2 className="text-xl font-semibold text-purple-700 mb-2">School Administration</h2>
+            <p className="text-gray-600">Manage school settings, teachers, and students.</p>
+          </Link>
+        )}
         
       </div>
     </div>

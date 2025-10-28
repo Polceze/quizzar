@@ -1,4 +1,5 @@
-import User from '../models/User.js'; // Note the .js extension for local modules
+import User from '../models/User.js';
+import School from '../models/School.js';
 import jwt from 'jsonwebtoken';
 
 // Helper function to generate JWT
@@ -12,12 +13,20 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 export const registerUser = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, school } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists.' });
+    }
+
+    // NEW: Validate school exists if provided
+    if (school) {
+      const schoolExists = await School.findById(school);
+      if (!schoolExists) {
+        return res.status(400).json({ message: 'Selected school does not exist.' });
+      }
     }
 
     const finalRole = (role === 'teacher') ? 'pending_teacher' : 'student';
@@ -26,7 +35,27 @@ export const registerUser = async (req, res) => {
       email,
       password,
       role: finalRole,
+      school: school || null,
     });
+
+    // NEW: If school provided, update school's arrays
+    if (school) {
+      if (finalRole === 'student') {
+        await School.findByIdAndUpdate(school, {
+          $addToSet: { students: user._id }
+        });
+      } else if (finalRole === 'pending_teacher') {
+        await School.findByIdAndUpdate(school, {
+          $addToSet: { 
+            'teachers': {
+              teacher: user._id,
+              status: 'pending',
+              joinedAt: new Date()
+            }
+          }
+        });
+      }
+    }
 
     if (user) {
       res.status(201).json({
@@ -34,12 +63,14 @@ export const registerUser = async (req, res) => {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
-        token: generateToken(user._id), 
+        school: user.school,
+        token: generateToken(user._id),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data.' });
     }
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: error.message });
   }
 };

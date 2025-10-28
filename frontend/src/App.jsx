@@ -23,6 +23,9 @@ import StudentEnrolledUnitsPage from './pages/student/StudentEnrolledUnitsPage';
 import StudentUnitRequestPage from './pages/student/StudentUnitRequestPage';
 import TeacherUnitRequestsPage from './pages/teacher/TeacherUnitRequestsPage';
 import TeacherProfileForm from './pages/teacher/TeacherProfileForm';
+import SchoolAdminDashboard from './pages/admin/SchoolAdminDashboard';
+import CreateSchoolWizard from './pages/CreateSchoolWizard';
+import SchoolBrowserPage from './pages/SchoolBrowserPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -48,6 +51,8 @@ function App() {
       } />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/create-school" element={<CreateSchoolWizard />} />
+      <Route path="/schools" element={<SchoolBrowserPage />} />
       <Route path="*" element={<NotFound />} /> {/* Keep 404 outside layout to catch all errors */}
 
 
@@ -70,6 +75,7 @@ function App() {
           {/* Teacher/Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={['teacher', 'admin', 'pending_teacher']} />}>
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+            <Route path="/admin/school" element={<SchoolAdminDashboard />} />
             <Route path="/teacher/profile" element={<TeacherProfileGate />} />
             <Route path="/teacher/units" element={<UnitsPage />} />
             <Route path="/teacher/units/requests" element={<TeacherUnitRequestsPage />} />

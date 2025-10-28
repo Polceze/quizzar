@@ -1,6 +1,7 @@
 import School from '../models/School.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 
 // @desc    Create a new school
 // @route   POST /api/schools
@@ -166,5 +167,136 @@ export const getAdminSchool = async (req, res) => {
     res.status(200).json(school);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Create school with admin account in one transaction
+// @route   POST /api/schools/create-with-admin
+// @access  Public
+export const createSchoolWithAdmin = async (req, res) => {
+  const { school, admin } = req.body;
+
+  // Start a session for transaction
+  const session = await mongoose.startSession();
+  
+  try {
+    await session.startTransaction();
+
+    // 1. Validate input
+    if (!school?.name || !admin?.email || !admin?.password) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({ 
+        message: 'School name, admin email, and password are required.' 
+      });
+    }
+
+    // 2. Check if school name already exists
+    const schoolExists = await School.findOne({ 
+      name: { $regex: new RegExp(`^${school.name}$`, 'i') } 
+    }).session(session);
+    
+    if (schoolExists) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({ 
+        message: 'A school with this name already exists.' 
+      });
+    }
+
+    // 3. Check if admin email already exists
+    const adminExists = await User.findOne({ 
+      email: admin.email 
+    }).session(session);
+    
+    if (adminExists) {
+      await session.abortTransaction();
+      await session.endSession();
+      return res.status(400).json({ 
+        message: 'A user with this email already exists.' 
+      });
+    }
+
+    // 4. Create the admin user
+    const adminUser = await User.create([{
+      email: admin.email,
+      password: admin.password,
+      role: 'admin', // School creator becomes admin
+      isVerified: true
+    }], { session });
+
+    // 5. Create the school
+    const newSchool = await School.create([{
+      name: school.name,
+      description: school.description || '',
+      admin: adminUser[0]._id,
+      subscriptionTier: 'free',
+      teachers: [{
+        teacher: adminUser[0]._id,
+        status: 'approved',
+        joinedAt: new Date()
+      }]
+    }], { session });
+
+    // 6. Update admin user with school reference
+    await User.findByIdAndUpdate(
+      adminUser[0]._id,
+      { school: newSchool[0]._id },
+      { session }
+    );
+
+    // 7. Commit transaction
+    await session.commitTransaction();
+
+    // 8. Generate JWT token for auto-login
+    const token = jwt.sign({ id: adminUser[0]._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d',
+    });
+
+    // 9. Return success response
+    res.status(201).json({
+      message: 'School created successfully! You are now the School Admin.',
+      token,
+      user: {
+        _id: adminUser[0]._id,
+        email: adminUser[0].email,
+        role: adminUser[0].role,
+        isVerified: adminUser[0].isVerified,
+        school: newSchool[0]._id
+      },
+      school: newSchool[0]
+    });
+
+  } catch (error) {
+    console.error('School creation error:', error);
+    
+    // Only abort transaction if it hasn't been committed
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    
+    await session.endSession();
+    
+    // More specific error messages
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation failed: ' + Object.values(error.errors).map(e => e.message).join(', ')
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        message: 'A school or user with these details already exists.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Failed to create school and admin account: ' + error.message 
+    });
+  } finally {
+    // Ensure session is always ended
+    if (session && session.id) {
+      await session.endSession().catch(console.error);
+    }
   }
 };
