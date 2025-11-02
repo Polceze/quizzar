@@ -7,12 +7,14 @@ import {
     getUnitDetails,
     requestEnrollment,
     getPendingRequests, 
-    handleEnrollmentApproval
+    handleEnrollmentApproval,
+    getUnitStudents,
+    removeStudentFromUnit
 } from '../controllers/unitController.js';
 
 const router = express.Router();
 
-// 1. Teacher creates and lists their units (Handles GET /api/units)
+// Teacher creates and lists their units (Handles GET /api/units)
 router.route('/')
     .post(
         protect, 
@@ -39,7 +41,7 @@ router.route('/:id')
     );
 
 
-// 2. Student requests enrollment in a unit
+// Student requests enrollment in a unit
 router.post(
     '/request-enroll', 
     protect, 
@@ -47,7 +49,7 @@ router.post(
     requestEnrollment
 );
 
-// 3. Teacher Management Routes
+// Teacher Management Routes
 router.get(
     '/requests/pending', 
     protect, 
@@ -60,6 +62,20 @@ router.put(
     protect, 
     restrictTo('teacher'), 
     handleEnrollmentApproval 
+);
+
+router.get(
+  '/:unitId/students',
+  protect,
+  restrictTo('teacher'),
+  getUnitStudents
+);
+
+router.delete(
+  '/:unitId/students/:studentId',
+  protect,
+  restrictTo('teacher'),
+  removeStudentFromUnit
 );
 
 export default router;

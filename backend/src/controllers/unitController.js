@@ -277,3 +277,82 @@ export const getUnitDetails = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Get students enrolled in a specific unit
+// @route   GET /api/units/:unitId/students
+// @access  Private/Teacher
+export const getUnitStudents = async (req, res) => {
+  const { unitId } = req.params;
+  const teacherId = req.user._id;
+
+  try {
+    // Verify the unit belongs to the teacher
+    const unit = await Unit.findOne({ _id: unitId, teacher: teacherId });
+    if (!unit) {
+      return res.status(404).json({ message: 'Unit not found or access denied.' });
+    }
+
+    // Get students with their profiles
+    const students = await User.find({ _id: { $in: unit.students } })
+      .populate('studentProfile', 'fullName admissionNumber yearOfStudy age residence')
+      .select('email');
+
+    // Transform the data to include profile information
+    const studentsWithProfiles = students.map(student => ({
+      _id: student._id,
+      email: student.email,
+      fullName: student.studentProfile?.fullName,
+      admissionNumber: student.studentProfile?.admissionNumber,
+      yearOfStudy: student.studentProfile?.yearOfStudy,
+      age: student.studentProfile?.age,
+      residence: student.studentProfile?.residence
+    }));
+
+    res.status(200).json(studentsWithProfiles);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Remove student from unit
+// @route   DELETE /api/units/:unitId/students/:studentId
+// @access  Private/Teacher
+export const removeStudentFromUnit = async (req, res) => {
+  const { unitId, studentId } = req.params;
+  const teacherId = req.user._id;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Verify the unit belongs to the teacher
+    const unit = await Unit.findOne({ _id: unitId, teacher: teacherId }).session(session);
+    if (!unit) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ message: 'Unit not found or access denied.' });
+    }
+
+    // Remove student from unit
+    unit.students.pull(studentId);
+    await unit.save({ session });
+
+    // Remove unit from student's enrolled units
+    await StudentProfile.findOneAndUpdate(
+      { user: studentId },
+      { $pull: { unitsEnrolled: unitId } },
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: 'Student removed from unit successfully.' });
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(500).json({ message: error.message });
+  }
+};

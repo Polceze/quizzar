@@ -7,6 +7,7 @@ import {
   getAdminSchool,
   createSchoolWithAdmin
 } from '../controllers/schoolController.js';
+import schoolAdminRoutes from './schoolAdminRoutes.js';
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.post('/:schoolId/join', joinSchool);
 
 // Admin only routes
 router.get('/admin', restrictTo('admin'), getAdminSchool);
+router.use('/', restrictTo('admin'), schoolAdminRoutes);
 
 export default router;

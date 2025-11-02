@@ -37,7 +37,7 @@ const TeacherDashboard = () => {
             <p className="text-gray-600">Create, view, and edit your classes/subjects and their questions.</p>
         </Link>
 
-        {/* Card 2: Enrollment Requests (NEW CARD) */}
+        {/* Card 2: Enrollment Requests */}
         <Link 
             to="/teacher/units/requests" 
             className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-yellow-500"
@@ -46,7 +46,16 @@ const TeacherDashboard = () => {
             <p className="text-gray-600">Approve or reject students requesting to join your units.</p>
         </Link>
 
-        {/* Card 3: Exam Management */}
+        {/* Card 3: Student management */}
+        <Link 
+          to="/teacher/students" 
+          className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-green-500"
+        >
+          <h2 className="text-xl font-semibold text-green-700 mb-2">Manage Students</h2>
+          <p className="text-gray-600">View and manage students in your units, remove enrollments.</p>
+        </Link>
+
+        {/* Card 4: Exam Management */}
         <Link 
             to="/teacher/exams" 
             className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-blue-500"
@@ -55,7 +64,7 @@ const TeacherDashboard = () => {
             <p className="text-gray-600">Create, publish, review, and delete quizzes and tests.</p>
         </Link>
         
-        {/* Card 4: Profile/Settings */}
+        {/* Card 5: Profile/Settings */}
         <Link 
             to="/teacher/profile/form" 
             className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-red-800"
@@ -64,6 +73,7 @@ const TeacherDashboard = () => {
             <p className="text-gray-600">Update account information and view credentials.</p>
         </Link>
 
+        {/* Card 6: Admin only - School administration */}
         {user.role === 'admin' && (
           <Link 
             to="/admin/school" 
