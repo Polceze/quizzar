@@ -333,12 +333,23 @@ const ExamEditPage = () => {
 // Simple reusable component for question display
 const QuestionCard = ({ question, isSelected, onToggle, disabled }) => {
     return (
-        <div className={`p-3 border rounded-lg shadow-sm transition duration-150 ${
+        <div className={`p-3 border rounded-lg shadow-sm transition duration-150 relative ${
             isSelected ? 'bg-green-50 border-green-400' : 'bg-white hover:bg-gray-50 border-gray-200'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-            <p className="text-sm font-medium text-gray-800 line-clamp-2">{question.text}</p>
+            
+            {/* AI Badge */}
+            {question.isAIGenerated && (
+                <span className="absolute top-1 right-1 inline-flex items-center px-1.5 py-0.5 text-xs font-medium bg-teal-100 text-teal-800 rounded">
+                    AI
+                </span>
+            )}
+            
+            <p className="text-sm font-medium text-gray-800 line-clamp-2 pr-8">{question.text}</p>
             <div className="flex justify-between items-center text-xs mt-2">
-                <span className="text-gray-500">{question.questionType} ({question.points} Pts)</span>
+                <span className="text-gray-500">
+                    {question.questionType} ({question.points} Pts)
+                    {question.isAIGenerated && ' • 🤖'}
+                </span>
                 <button
                     onClick={() => !disabled && onToggle(question)}
                     className={`px-3 py-1 text-xs rounded transition ${

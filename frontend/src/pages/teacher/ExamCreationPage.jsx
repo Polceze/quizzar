@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const ExamCreationPage = () => {
   const { token } = useAuth();
@@ -15,8 +15,8 @@ const ExamCreationPage = () => {
     name: '',
     unit: '', // Selected Unit ID
     durationMinutes: 60,
-    totalPoints: 0, 
-    questionCount: 0, 
+    totalMarks: 0, 
+    questions: [],
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -40,7 +40,7 @@ const ExamCreationPage = () => {
       }
     };
     fetchUnits();
-  }, [token, setLoading, setError]);
+  }, [token]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,7 +57,19 @@ const ExamCreationPage = () => {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         };
         
-        const response = await axios.post('/api/exams', formData, config);
+        const examData = {
+          name: formData.name,
+          unit: formData.unit,
+          durationMinutes: formData.durationMinutes,
+          totalMarks: formData.totalMarks,
+          questions: formData.questions,
+          // These will use defaults from the backend
+          description: '',
+          scheduledStart: new Date(),
+          scheduledEnd: null
+        };
+        
+        const response = await axios.post('/api/exams', examData, config);
         
         alert(`Exam "${response.data.name}" created successfully!`);
         navigate('/teacher/exams'); 
@@ -131,9 +143,9 @@ const ExamCreationPage = () => {
           </div>
           
           {/* Placeholder for future complexity (Question selection/Total Points) */}
-          <p className="text-sm text-yellow-700 bg-yellow-100 p-3 rounded mb-6">
+          {/* <p className="text-sm text-yellow-700 bg-yellow-100 p-3 rounded mb-6">
             Note: Question selection will be implemented in the next phase. For now, this step creates the exam shell.
-          </p>
+          </p> */}
 
           <button
             type="submit"

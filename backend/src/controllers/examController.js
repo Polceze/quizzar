@@ -2,12 +2,21 @@ import Exam from '../models/Exam.js';
 import Unit from '../models/Unit.js';
 
 // Helper function to validate required fields and teacher ownership
-const validateExamCreation = async (unit, teacherId) => {
-  const existingUnit = await Unit.findById(unit); // Use 'unit' here
-  if (!existingUnit || existingUnit.teacher.toString() !== teacherId.toString()) {
-    return { error: 'Unit not found or you are not the unit teacher.', status: 403 };
-  }
-  return { unit: existingUnit };
+const validateExamCreation = async (unitId, teacherId) => {
+  if (!mongoose.Types.ObjectId.isValid(unitId)) {
+    return { error: 'Invalid unit ID.', status: 400 };
+  }
+  
+  const existingUnit = await Unit.findById(unitId);
+  if (!existingUnit) {
+    return { error: 'Unit not found.', status: 404 };
+  }
+  
+  if (existingUnit.teacher.toString() !== teacherId.toString()) {
+    return { error: 'You are not the teacher of this unit.', status: 403 };
+  }
+  
+  return { unit: existingUnit };
 };
 
 // @desc    Create a new Exam/Quiz
@@ -17,9 +26,19 @@ export const createExam = async (req, res) => {
   const { unit, name, description, questions, durationMinutes, totalMarks, scheduledStart, scheduledEnd } = req.body;
   const creatorId = req.user._id;
 
+  // Basic validation
+  if (!name || !durationMinutes) {
+    return res.status(400).json({ message: 'Name and duration are required fields.' });
+  }
+
   try {
     const validation = await validateExamCreation(unit, creatorId);
     if (validation.error) return res.status(validation.status).json({ message: validation.error });
+
+    // Validate scheduled times if provided
+    if (scheduledStart && scheduledEnd && new Date(scheduledStart) >= new Date(scheduledEnd)) {
+      return res.status(400).json({ message: 'Scheduled end time must be after start time.' });
+    }
 
     // Calculate actual total marks based on provided questions
     const actualTotalMarks = questions && questions.length > 0 
@@ -93,7 +112,7 @@ export const getExamsByUnit = async (req, res) => {
   const teacherId = req.user._id;
 
   try {
-    const validation = await validateExamCreation(unit, teacherId);
+    const validation = await validateExamCreation(unitId, teacherId);
     if (validation.error) return res.status(validation.status).json({ message: validation.error });
 
     const exams = await Exam.find({ unit: unitId, creator: teacherId })
@@ -142,31 +161,51 @@ export const updateExam = async (req, res) => {
   const { questions, totalMarks, durationMinutes, status, ...otherUpdates } = req.body;
 
   try {
-    const updatedExam = await Exam.findOneAndUpdate(
-        { _id: examId, creator: teacherId, status: { $ne: 'active' } }, // Prevent updating active exams
-        { 
-            questions: questions,
-            totalMarks: totalMarks,
-            durationMinutes: durationMinutes,
-            ...(status && { status: status }),
-            ...otherUpdates // Apply any other safe updates
-        },
-        { new: true, runValidators: true }
+    // First check if exam exists and user has permission
+    const existingExam = await Exam.findById(examId);
+    if (!existingExam) {
+      return res.status(404).json({ message: 'Exam not found.' });
+    }
+
+    if (existingExam.creator.toString() !== teacherId.toString()) {
+      return res.status(403).json({ message: 'Unauthorized access to this exam.' });
+    }
+
+    // Prevent updating active exams
+    if (existingExam.status === 'active') {
+      return res.status(400).json({ message: 'Cannot update an active exam.' });
+    }
+
+    // Validate status transitions
+    if (status && !['draft', 'archived'].includes(status)) {
+      return res.status(400).json({ 
+        message: 'Invalid status transition. Can only change to draft or archived.' 
+      });
+    }
+
+    const updatedExam = await Exam.findByIdAndUpdate(
+      examId,
+      { 
+        questions: questions,
+        totalMarks: totalMarks,
+        durationMinutes: durationMinutes,
+        ...(status && { status: status }),
+        ...otherUpdates
+      },
+      { new: true, runValidators: true }
     );
 
-    if (!updatedExam) {
-        const examCheck = await Exam.findById(examId);
-        if(examCheck && examCheck.status === 'active') {
-             return res.status(400).json({ message: 'Cannot update an exam once it is active.' });
-        }
-        return res.status(404).json({ message: 'Exam not found or unauthorized.' });
-    }
+    res.status(200).json(updatedExam);
 
-    res.status(200).json(updatedExam);
-
-  } catch (error) {
-    res.status(400).json({ message: error.message }); // Return 400 for validation errors
-  }
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        message: 'Validation error', 
+        errors: error.errors 
+      });
+    }
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // @desc    Delete an exam by ID
@@ -197,4 +236,85 @@ export const deleteExam = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+// @desc    Publish an exam (draft → active)
+// @route   PUT /api/exams/:examId/publish
+// @access  Private/Teacher
+export const publishExam = async (req, res) => {
+  const { examId } = req.params;
+  const teacherId = req.user._id;
+
+  try {
+    const exam = await Exam.findById(examId);
+    
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found.' });
+    }
+
+    if (exam.creator.toString() !== teacherId.toString()) {
+      return res.status(403).json({ message: 'Unauthorized access to this exam.' });
+    }
+
+    if (exam.status !== 'draft') {
+      return res.status(400).json({ 
+        message: 'Only exams in draft status can be published.' 
+      });
+    }
+
+    // Validate that exam has questions before publishing
+    if (!exam.questions || exam.questions.length === 0) {
+      return res.status(400).json({ 
+        message: 'Cannot publish an exam without questions.' 
+      });
+    }
+
+    exam.status = 'active';
+    await exam.save();
+
+    res.status(200).json({ 
+      message: 'Exam published successfully.', 
+      exam 
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Archive an exam (active → archived)
+// @route   PUT /api/exams/:examId/archive
+// @access  Private/Teacher
+export const archiveExam = async (req, res) => {
+  const { examId } = req.params;
+  const teacherId = req.user._id;
+
+  try {
+    const exam = await Exam.findById(examId);
+    
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found.' });
+    }
+
+    if (exam.creator.toString() !== teacherId.toString()) {
+      return res.status(403).json({ message: 'Unauthorized access to this exam.' });
+    }
+
+    if (exam.status !== 'active') {
+      return res.status(400).json({ 
+        message: 'Only active exams can be archived.' 
+      });
+    }
+
+    exam.status = 'archived';
+    await exam.save();
+
+    res.status(200).json({ 
+      message: 'Exam archived successfully.', 
+      exam 
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

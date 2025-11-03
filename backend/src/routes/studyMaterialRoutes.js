@@ -19,6 +19,6 @@ router.get('/ai/test', testAIConnection);
 router.post('/study-material/extract', upload.single('file'), extractStudyMaterial);
 
 // Generate questions from study material
-router.post('/ai/generate-questions', generateQuestions);
+// router.post('/ai/generate-questions', generateQuestions);
 
 export default router;

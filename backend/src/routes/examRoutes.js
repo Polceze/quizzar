@@ -6,7 +6,9 @@ import {
     getExamById, 
     updateExam,
     getTeacherExams,
-    deleteExam
+    deleteExam,
+    publishExam,
+    archiveExam
 } from '../controllers/examController.js';
 
 const router = express.Router();
@@ -28,5 +30,13 @@ router.route('/:examId')
     .get(teacherOnly, getExamById)
     .put(teacherOnly, updateExam)
     .delete(teacherOnly, deleteExam);
+
+// Publish Exam (change status from draft to active)
+router.route('/:examId/publish')
+    .put(teacherOnly, publishExam);
+
+// Archive Exam
+router.route('/:examId/archive')
+    .put(teacherOnly, archiveExam);
 
 export default router;

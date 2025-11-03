@@ -1,7 +1,10 @@
 import AIService from '../services/aiService.js';
-import * as pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
 import multer from 'multer';
 import path from 'path';
+
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();

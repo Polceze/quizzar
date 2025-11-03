@@ -28,15 +28,6 @@ const TeacherDashboard = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* Card 1: Unit & Question Management */}
-        <Link 
-            to="/teacher/units" 
-            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-blue-500"
-        >
-            <h2 className="text-xl font-semibold text-blue-700 mb-2">Manage Units & Questions</h2>
-            <p className="text-gray-600">Create, view, and edit your classes/subjects and their questions.</p>
-        </Link>
-
         {/* Card 2: Enrollment Requests */}
         <Link 
             to="/teacher/units/requests" 
@@ -53,6 +44,15 @@ const TeacherDashboard = () => {
         >
           <h2 className="text-xl font-semibold text-green-700 mb-2">Manage Students</h2>
           <p className="text-gray-600">View and manage students in your units, remove enrollments.</p>
+        </Link>
+
+        {/* Card 1: Unit & Question Management */}
+        <Link 
+            to="/teacher/units" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-blue-500"
+        >
+            <h2 className="text-xl font-semibold text-blue-700 mb-2">Manage Units & Questions</h2>
+            <p className="text-gray-600">Create, view, and edit your classes/subjects and their questions.</p>
         </Link>
 
         {/* Card 4: Exam Management */}

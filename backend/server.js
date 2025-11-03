@@ -20,6 +20,7 @@ import studentProfileRoutes from './src/routes/studentProfileRoutes.js';
 import teacherRoutes from './src/routes/teacherRoutes.js';
 import schoolRoutes from './src/routes/schoolRoutes.js';
 import studyMaterialRoutes from './src/routes/studyMaterialRoutes.js';
+import aiRoutes from './src/routes/aiRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/student', studentProfileRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api', studyMaterialRoutes);
+app.use('/api/ai', aiRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {

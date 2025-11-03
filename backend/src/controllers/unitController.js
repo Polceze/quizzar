@@ -286,24 +286,29 @@ export const getUnitStudents = async (req, res) => {
   const teacherId = req.user._id;
 
   try {
-    // Verify the unit belongs to the teacher
-    const unit = await Unit.findOne({ _id: unitId, teacher: teacherId });
+    // Verify the unit belongs to the teacher and populate students with their profiles
+    const unit = await Unit.findOne({ _id: unitId, teacher: teacherId })
+      .populate({
+        path: 'students',
+        select: 'email',
+        populate: {
+          path: 'studentProfile',
+          model: 'StudentProfile',
+          select: 'fullName admissionNumber yearOfStudy age residence'
+        }
+      });
+
     if (!unit) {
       return res.status(404).json({ message: 'Unit not found or access denied.' });
     }
 
-    // Get students with their profiles
-    const students = await User.find({ _id: { $in: unit.students } })
-      .populate('studentProfile', 'fullName admissionNumber yearOfStudy age residence')
-      .select('email');
-
     // Transform the data to include profile information
-    const studentsWithProfiles = students.map(student => ({
+    const studentsWithProfiles = unit.students.map(student => ({
       _id: student._id,
       email: student.email,
-      fullName: student.studentProfile?.fullName,
-      admissionNumber: student.studentProfile?.admissionNumber,
-      yearOfStudy: student.studentProfile?.yearOfStudy,
+      fullName: student.studentProfile?.fullName || 'N/A',
+      admissionNumber: student.studentProfile?.admissionNumber || 'N/A',
+      yearOfStudy: student.studentProfile?.yearOfStudy || 'Unknown',
       age: student.studentProfile?.age,
       residence: student.studentProfile?.residence
     }));
@@ -311,6 +316,7 @@ export const getUnitStudents = async (req, res) => {
     res.status(200).json(studentsWithProfiles);
 
   } catch (error) {
+    console.error('Error in getUnitStudents:', error);
     res.status(500).json({ message: error.message });
   }
 };

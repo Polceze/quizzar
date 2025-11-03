@@ -127,11 +127,52 @@ export const updateQuestion = async (req, res) => {
         const teacherId = req.user._id;
         const updates = req.body;
 
-        // Ensure the question exists and belongs to the teacher before updating
+        // First, get the original question to check if it was AI-generated
+        const originalQuestion = await Question.findOne({ 
+            _id: questionId, 
+            teacher: teacherId 
+        });
+
+        if (!originalQuestion) {
+            return res.status(404).json({ message: 'Question not found or access denied.' });
+        }
+
+        // Remove internal fields that shouldn't be updated directly
+        const { convertToManual, ...updateData } = updates;
+
+        // If the question was originally AI-generated and is being modified,
+        // mark it as modified and potentially convert to teacher-composed
+        if (originalQuestion.isAIGenerated) {
+            // Check if significant changes were made
+            const isSignificantChange = checkForSignificantChanges(originalQuestion, updateData);
+            
+            if (isSignificantChange) {
+                updateData.isAIContentModified = true;
+                
+                // Add to modification history
+                const modificationEntry = {
+                    modifiedAt: new Date(),
+                    modifiedBy: teacherId,
+                    changes: describeChanges(originalQuestion, updateData)
+                };
+                
+                // Use $push to add to modificationHistory array
+                updateData.$push = { modificationHistory: modificationEntry };
+                
+                // If the teacher wants to fully take ownership, convert to teacher-composed
+                if (convertToManual === true) {
+                    updateData.isAIGenerated = false;
+                    updateData.aiModelUsed = null;
+                    updateData.aiGenerationNotes = `Originally AI-generated, converted to teacher-composed by teacher on ${new Date().toISOString()}`;
+                }
+            }
+        }
+
+        // Update the question
         const question = await Question.findOneAndUpdate(
             { _id: questionId, teacher: teacherId },
-            updates,
-            { new: true, runValidators: true } // Return the updated doc and run schema validators
+            updateData,
+            { new: true, runValidators: true }
         );
 
         if (!question) {
@@ -144,6 +185,53 @@ export const updateQuestion = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Update question error:', error);
         res.status(400).json({ message: error.message });
     }
+};
+
+// Helper function to check if significant changes were made
+const checkForSignificantChanges = (original, updates) => {
+    // Significant changes include:
+    // - Changing the question text
+    // - Changing the correct answer
+    // - Changing options (for MCQ)
+    if (updates.text && updates.text !== original.text) {
+        return true;
+    }
+    
+    if (updates.correctAnswerIndex !== undefined && 
+        updates.correctAnswerIndex !== original.correctAnswerIndex) {
+        return true;
+    }
+    
+    if (updates.options && JSON.stringify(updates.options) !== JSON.stringify(original.options)) {
+        return true;
+    }
+    
+    return false;
+};
+
+// Helper function to describe what changed
+const describeChanges = (original, updates) => {
+    const changes = [];
+    
+    if (updates.text && updates.text !== original.text) {
+        changes.push('question text modified');
+    }
+    
+    if (updates.correctAnswerIndex !== undefined && 
+        updates.correctAnswerIndex !== original.correctAnswerIndex) {
+        changes.push('correct answer changed');
+    }
+    
+    if (updates.options && JSON.stringify(updates.options) !== JSON.stringify(original.options)) {
+        changes.push('options modified');
+    }
+    
+    if (updates.points && updates.points !== original.points) {
+        changes.push('points changed');
+    }
+    
+    return changes.length > 0 ? changes.join(', ') : 'minor updates';
 };

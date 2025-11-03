@@ -37,6 +37,34 @@ const QuestionSchema = new mongoose.Schema({
     required: [true, 'Points are required.'],
     min: 1,
   },
+  isAIGenerated: {
+    type: Boolean,
+    default: false
+  },
+  aiModelUsed: {
+    type: String,
+    default: null
+  },
+  aiGenerationNotes: {
+    type: String,
+    default: null
+  },
+  isAIContentModified: {
+    type: Boolean,
+    default: false
+  },
+  // Track modification history
+  modificationHistory: [{
+    modifiedAt: {
+      type: Date,
+      default: Date.now
+    },
+    modifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    changes: String // Description of what was changed
+  }]
 }, { timestamps: true });
 
 const Question = mongoose.model('Question', QuestionSchema);
