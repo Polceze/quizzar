@@ -194,7 +194,7 @@ const TeacherProfileForm = () => {
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
                     Your account is verified.
                     {isProfileLocked && (
-                        <span className="text-red-500 ml-2 text-xs font-normal"> (Core data is locked)</span>
+                        <span className="text-green-500 ml-2 text-xs font-normal"> (Core data is locked)</span>
                     )}
                 </p>
             ) : (
@@ -203,6 +203,24 @@ const TeacherProfileForm = () => {
                     Please complete the required fields to verify your account and access the dashboard.
                 </p>
             )}
+
+            {/* Help text */}
+            {isProfileLocked ? (
+                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                        <strong>🔒 Profile Locked:</strong> Core profile information (Full Name, Staff Number, Phone Number) cannot be changed after initial verification. 
+                        Only the **Residence** field can be updated.
+                    </p>
+                </div>
+            ) : (
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                        <strong>💡 Important:</strong> The information you enter now for your name, staff number, and phone number 
+                        will be **permanently locked** upon submission to ensure data integrity. Please review carefully.
+                    </p>
+                </div>
+            )}
+            <br />
 
             {error && <p className="text-red-500 mb-4 p-3 bg-red-100 border border-red-300 rounded-md font-medium">{error}</p>}
             {message && <p className="text-green-600 mb-4 p-3 bg-green-100 border border-green-300 rounded-md font-medium">{message}</p>}
@@ -292,23 +310,6 @@ const TeacherProfileForm = () => {
                      'Complete & Verify Account'}
                 </button>
             </form>
-            
-            {/* Help text */}
-            {isProfileLocked ? (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                        <strong>🔒 Profile Locked:</strong> Core profile information (Full Name, Staff Number, Phone Number) cannot be changed after initial verification. 
-                        Only the **Residence** field can be updated.
-                    </p>
-                </div>
-            ) : (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-300 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                        <strong>💡 Important:</strong> The information you enter now for your name, staff number, and phone number 
-                        will be **permanently locked** upon submission to ensure data integrity. Please review carefully.
-                    </p>
-                </div>
-            )}
         </div>
     );
 };

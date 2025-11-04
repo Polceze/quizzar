@@ -66,11 +66,10 @@ const StudentExamListPage = () => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <Link
-                                    // The next phase link
-                                    to={`/student/exams/${exam._id}/start`} 
+                                    to={`/student/exams/${exam._id}/instructions`}
                                     className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                                >
-                                    Start Exam
+                                    >
+                                    {exam.hasActiveAttempt ? 'Resume Exam' : 'Start Exam'}
                                 </Link>
                             </div>
                         </div>

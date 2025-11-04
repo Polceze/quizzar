@@ -68,8 +68,17 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGOUT' });
   };
 
+  const updateUser = (updatedUser) => {
+    // Update both state and localStorage
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    dispatch({ 
+        type: 'LOGIN_SUCCESS', 
+        payload: { user: updatedUser, token: state.token } 
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

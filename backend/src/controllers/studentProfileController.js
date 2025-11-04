@@ -108,7 +108,7 @@ const handleInitialProfileUpdate = async (existingProfile, profileData, studentI
         const user = await User.findByIdAndUpdate(
             studentId, 
             { isVerified: true }, 
-            { new: true, select: 'email isVerified' }
+            { new: true }
         );
 
         return res.status(200).json({
@@ -137,7 +137,7 @@ const handleNewProfileCreation = async (profileData, studentId, res) => {
         const user = await User.findByIdAndUpdate(
             studentId, 
             { isVerified: true }, 
-            { new: true, select: 'email isVerified' }
+            { new: true }
         );
 
         return res.status(201).json({

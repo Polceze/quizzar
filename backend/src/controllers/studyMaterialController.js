@@ -1,10 +1,11 @@
 import AIService from '../services/aiService.js';
-import { createRequire } from 'module';
 import multer from 'multer';
 import path from 'path';
+import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+const PDFParser = require('pdf2json');
+const { createWorker } = require('tesseract.js');
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -42,35 +43,97 @@ export const testAIConnection = async (req, res) => {
   }
 };
 
+// Function to convert PDF to images and perform OCR
+async function extractTextWithOCR(pdfBuffer) {  
+  const worker = await createWorker('eng');
+  let extractedText = '';
+
+  try {
+    // For now, we'll handle this as a simple approach
+    // In a real implementation, you'd convert PDF pages to images first
+    console.log('⚠️ PDF appears to be image-based. OCR required for full text extraction.');
+    
+    // Return a message suggesting manual input for now
+    throw new Error('This PDF appears to be image-based and requires OCR. Please copy and paste the text content manually, or use a text-based PDF.');
+    
+  } finally {
+    await worker.terminate();
+  }
+}
+
 // @desc    Extract text from uploaded study material
 // @route   POST /api/study-material/extract
 // @access  Private/Teacher
 export const extractStudyMaterial = async (req, res) => {
   try {
+    console.log('📁 File upload received:', {
+      file: req.file ? {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : 'No file'
+    });
+
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
     let extractedText = '';
 
-    if (req.file.mimetype === 'application/pdf') {
-      // Extract text from PDF
-      const pdfData = await pdfParse(req.file.buffer);
-      extractedText = pdfData.text;
-      
-      if (!extractedText.trim()) {
-        return res.status(400).json({ message: 'No readable text found in PDF' });
+    if (req.file.mimetype === 'application/pdf') {      
+      // First try standard text extraction
+      try {
+        extractedText = await new Promise((resolve, reject) => {
+          const pdfParser = new PDFParser();
+          
+          pdfParser.on('pdfParser_dataError', (error) => {
+            reject(new Error(`PDF parsing failed: ${error.parserError}`));
+          });
+          
+          pdfParser.on('pdfParser_dataReady', (pdfData) => {
+            try {
+              const rawText = pdfParser.getRawTextContent();
+              resolve(rawText || '');
+            } catch (error) {
+              reject(new Error(`Failed to extract text: ${error.message}`));
+            }
+          });
+
+          const timeout = setTimeout(() => {
+            reject(new Error('PDF parsing timeout'));
+          }, 30000);
+
+          pdfParser.on('pdfParser_dataReady', () => clearTimeout(timeout));
+          pdfParser.on('pdfParser_dataError', () => clearTimeout(timeout));
+
+          pdfParser.parseBuffer(req.file.buffer);
+        });
+        
+        if (!extractedText.trim()) {
+          // If standard extraction failed, try OCR approach
+          return res.status(400).json({ 
+            message: 'This PDF appears to be a scanned image or uses non-standard text encoding. Text extraction from image-based PDFs requires additional processing. Please either:\n\n1. Use a text-based PDF (where you can select and copy text)\n2. Copy and paste the text content manually\n3. Use the manual text input option instead',
+            requiresManualInput: true
+          });
+        }
+        
+      } catch (error) {
+        console.error('PDF extraction error:', error);
+        return res.status(400).json({ 
+          message: `PDF processing failed: ${error.message}. Please try using the manual text input option.`,
+          requiresManualInput: true
+        });
       }
+
     } else if (req.file.mimetype === 'text/plain') {
-      // Extract text from TXT
       extractedText = req.file.buffer.toString('utf8');
     }
 
-    // Clean and limit text length (Gemini has token limits)
+    // Clean and limit text length
     const cleanedText = extractedText
       .replace(/\s+/g, ' ')
       .trim()
-      .substring(0, 10000); // Limit to ~10k characters
+      .substring(0, 10000);
 
     res.status(200).json({
       message: 'Text extracted successfully',
@@ -79,8 +142,10 @@ export const extractStudyMaterial = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Text extraction error:', error);
-    res.status(500).json({ message: `Text extraction failed: ${error.message}` });
+    console.error('💥 Text extraction error:', error);
+    res.status(500).json({ 
+      message: `Text extraction failed: ${error.message}` 
+    });
   }
 };
 

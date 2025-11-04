@@ -120,16 +120,15 @@ const StudentProfileForm = () => {
             const res = await axios.post('/api/student/profile', formData, config);
             
             if (res.data.user && res.data.user.isVerified) {
-                updateUser({ ...user, isVerified: true }); 
+                updateUser({ ...res.data.user }); 
                 setIsProfileLocked(true); // Lock the form after successful submission
-            }
-            
-            setMessage(res.data.message || 'Profile saved successfully!');
-            
-            if (!user.isVerified) {
+                
+                // Navigate to dashboard after verification, with a short delay
                 setTimeout(() => {
                     navigate('/student/dashboard', { replace: true });
                 }, 1500);
+            } else {
+                setMessage(res.data.message || 'Profile saved successfully!');
             }
 
         } catch (err) {
@@ -162,7 +161,18 @@ const StudentProfileForm = () => {
 
     return (
         <div className="p-8 bg-white rounded-lg shadow-xl max-w-2xl mx-auto">
-            <Link to="/student/dashboard" className="text-indigo-600 hover:text-indigo-800 text-sm mb-4 block">
+            <Link 
+                to={user.isVerified ? "/student/dashboard" : "#"} 
+                className={`text-indigo-600 hover:text-indigo-800 text-sm mb-4 block ${
+                    !user.isVerified ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                onClick={(e) => {
+                    if (!user.isVerified) {
+                        e.preventDefault();
+                        setError("Please complete your profile verification first.");
+                    }
+                }}
+            >
                 &larr; Back to Dashboard
             </Link>
             
@@ -174,7 +184,7 @@ const StudentProfileForm = () => {
                 <p className="mb-6 text-green-600 font-semibold">
                     ✅ Your account is verified.
                     {isProfileLocked && (
-                        <span className="text-orange-500 ml-2 font-light"> (Core profile data is locked)</span>
+                        <span className="text-green-500 ml-2 font-light"> (Core profile data is locked)</span>
                     )}
                 </p>
             ) : (
@@ -182,6 +192,24 @@ const StudentProfileForm = () => {
                     🛑 Please complete the required fields to verify your account and access the dashboard.
                 </p>
             )}
+
+            {/* Help text */}
+            {isProfileLocked ? (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <p className="text-sm text-yellow-700">
+                        <strong>Profile Locked:</strong> Core profile information cannot be changed after initial submission. 
+                        Only the residence field can be updated. Contact support if you need to modify locked fields.
+                    </p>
+                </div>
+            ) : (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-red-700">
+                        <strong>Important:</strong> After submitting, your core profile information (Name, Admission Number, Year, Age) 
+                        will be permanently locked and cannot be changed.
+                    </p>
+                </div>
+            )}
+            <br />
 
             {error && <p className="text-red-500 mb-4 p-3 bg-red-50 rounded">{error}</p>}
             {message && <p className="text-green-600 mb-4 p-3 bg-green-50 rounded">{message}</p>}
@@ -289,22 +317,7 @@ const StudentProfileForm = () => {
                 </button>
             </form>
             
-            {/* Help text */}
-            {isProfileLocked ? (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-700">
-                        <strong>Profile Locked:</strong> Core profile information cannot be changed after initial submission. 
-                        Only the residence field can be updated. Contact support if you need to modify locked fields.
-                    </p>
-                </div>
-            ) : (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-sm text-blue-700">
-                        <strong>Important:</strong> After submitting, your core profile information (Name, Admission Number, Year, Age) 
-                        will be permanently locked and cannot be changed.
-                    </p>
-                </div>
-            )}
+            
         </div>
     );
 };

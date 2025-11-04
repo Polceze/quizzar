@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Exam from '../models/Exam.js';
 import Unit from '../models/Unit.js';
 
@@ -50,7 +51,7 @@ export const createExam = async (req, res) => {
       creator: creatorId,
       unit: unit,
       name,
-      description,
+      description: description || '',
       questions: questions || [], // Start with an empty array if none provided
       durationMinutes,
       totalMarks: actualTotalMarks,

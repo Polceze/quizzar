@@ -19,6 +19,8 @@ import ExamCreationPage from './pages/teacher/ExamCreationPage';
 import ExamListPage from './pages/teacher/ExamListPage';
 import ExamEditPage from './pages/teacher/ExamEditPage';
 import StudentExamListPage from './pages/student/StudentExamListPage';
+import StudentExamPage from './pages/student/StudentExamPage';
+import ExamInstructionsPage from './pages/student/ExamInstructionsPage';
 import StudentEnrolledUnitsPage from './pages/student/StudentEnrolledUnitsPage';
 import StudentUnitRequestPage from './pages/student/StudentUnitRequestPage';
 import TeacherUnitRequestsPage from './pages/teacher/TeacherUnitRequestsPage';
@@ -71,6 +73,8 @@ function App() {
             <Route path="/student/units" element={<StudentEnrolledUnitsPage />} />
             <Route path="/student/units/request" element={<StudentUnitRequestPage />} />
             <Route path="/student/profile" element={<StudentProfileForm />} />
+            <Route path="/student/exams/:examId/take" element={<StudentExamPage />} />
+            <Route path="/student/exams/:examId/instructions" element={<ExamInstructionsPage />} />
           </Route>
 
           {/* Teacher/Admin Routes */}
