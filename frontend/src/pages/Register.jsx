@@ -166,6 +166,15 @@ const Register = () => {
             Create a New School
           </Link>
         </div>
+        {/* Back to home link */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm text-orange-600 hover:text-orange-800"
+          >
+            ← Back to Home
+          </button>
+        </div>
       </div>
     </div>
   );

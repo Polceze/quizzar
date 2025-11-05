@@ -117,7 +117,7 @@ StudentExamAttemptSchema.pre('save', async function(next) {
   next();
 });
 
-const StudentExamAttempt = mongoose.model('StudentExamAttempt', StudentExamAttemptSchema);
+const StudentExamAttempt = mongoose.models.StudentExamAttempt || mongoose.model('StudentExamAttempt', StudentExamAttemptSchema);
 
 // Ensure the index is created
 StudentExamAttempt.collection.createIndex(

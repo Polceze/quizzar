@@ -1,20 +1,33 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
 class AIService {
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.apiKey = process.env.DEEPSEEK_API_KEY;
+    this.apiUrl = 'https://api.deepseek.com/v1/chat/completions';
   }
 
   // Test API connection
   async testConnection() {
     try {
-      const result = await this.model.generateContent('Hello');
-      const response = await result.response;
-      return { success: true, message: 'Gemini API connected successfully' };
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [{ role: "user", content: "Hello" }],
+          max_tokens: 10
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      return { success: true, message: 'DeepSeek API connected successfully' };
     } catch (error) {
-      console.error('Gemini API Connection Error:', error);
-      return { success: false, message: `Gemini API connection failed: ${error.message}` };
+      console.error('DeepSeek API Connection Error:', error);
+      return { success: false, message: `DeepSeek API connection failed: ${error.message}` };
     }
   }
 
@@ -25,9 +38,33 @@ class AIService {
       
       const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
       
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const response = await fetch(this.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000,
+          stream: false
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const text = data.choices[0].message.content;
       
       return this.parseAIResponse(text);
       
@@ -37,6 +74,7 @@ class AIService {
     }
   }
 
+  // Keep the same buildPrompt and parseAIResponse methods
   buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty) {
     return `
 You are an expert educational content creator. Generate ${numQuestions} exam questions based on the following study material.

@@ -1,12 +1,19 @@
-// Load environment variables from .env file
-import dotenv from 'dotenv';
-dotenv.config();
-
 // ---Imports ---
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import morgan from 'morgan';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Debug: Check if environment variables are loading
+console.log('🔑 Environment variables check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI present:', !!process.env.MONGODB_URI);
+console.log('DEEPSEEK_API_KEY present:', !!process.env.DEEPSEEK_API_KEY);
+console.log('PORT:', process.env.PORT);
 
 // --- Import Routes ---
 import authRoutes from './src/routes/authRoutes.js';
@@ -21,6 +28,7 @@ import teacherRoutes from './src/routes/teacherRoutes.js';
 import schoolRoutes from './src/routes/schoolRoutes.js';
 import studyMaterialRoutes from './src/routes/studyMaterialRoutes.js';
 import aiRoutes from './src/routes/aiRoutes.js';
+import teacherAnalyticsRoutes from './src/routes/teacherAnalyticsRoutes.js';
 
 // --- Server Setup ---
 const app = express();
@@ -44,7 +52,8 @@ mongoose.connect(MONGODB_URI)
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Quizzar API is running.', 
-    environment: process.env.NODE_ENV || 'development' 
+    environment: process.env.NODE_ENV || 'development',
+    aiService: process.env.DEEPSEEK_API_KEY ? 'Configured' : 'Not configured'
   });
 });
 
@@ -61,9 +70,11 @@ app.use('/api/teacher', teacherRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api', studyMaterialRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/teacher/analytics', teacherAnalyticsRoutes);
 
 // --- 4. START SERVER ---
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port: ${PORT}`);
   console.log(`Access the API via: http://localhost:${PORT}`);
+  console.log(`🔑 AI Service: ${process.env.DEEPSEEK_API_KEY ? '✅ Configured' : '❌ Not configured'}`);
 });

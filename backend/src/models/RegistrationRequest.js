@@ -23,5 +23,5 @@ const RegistrationRequestSchema = new mongoose.Schema({
 // Create a unique index for student and unit combination
 RegistrationRequestSchema.index({ student: 1, unit: 1 }, { unique: true });
 
-const RegistrationRequest = mongoose.model('RegistrationRequest', RegistrationRequestSchema);
+const RegistrationRequest = mongoose.models.RegistrationRequest || mongoose.model('RegistrationRequest', RegistrationRequestSchema);
 export default RegistrationRequest;

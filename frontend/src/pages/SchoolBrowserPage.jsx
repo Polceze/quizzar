@@ -95,9 +95,9 @@ const SchoolBrowserPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             {schools.map((school) => (
-              <div key={school._id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div key={school._id} className="w-full md:max-w-md bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{school.name}</h3>
                   <p className="text-gray-600 mb-4 line-clamp-2">
@@ -130,6 +130,16 @@ const SchoolBrowserPage = () => {
           >
             Create a New School
           </Link>
+        </div>
+
+        {/* Back to home link */}
+        <div className="text-center mt-8">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm text-gray-600 hover:text-orange-800"
+          >
+            ← Back to Home
+          </button>
         </div>
       </div>
     </div>

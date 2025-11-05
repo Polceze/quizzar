@@ -64,5 +64,5 @@ const ExamSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-const Exam = mongoose.model('Exam', ExamSchema);
+const Exam = mongoose.models.Exam || mongoose.model('Exam', ExamSchema);
 export default Exam;

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      deepseek-api:
+        specifier: ^1.0.6
+        version: 1.0.6
       pdfjs-dist:
         specifier: ^5.4.394
         version: 5.4.394
@@ -78,6 +81,9 @@ packages:
     resolution: {integrity: sha512-ReCjd5SYI/UKx/olaQLC4GtN6wUQGjlgHXs1lvUvWGXfBMR3Fxnik3cL+OxKN5ithNdoU0/GlCrdKcQDFh2XKQ==}
     engines: {node: '>= 10'}
 
+  deepseek-api@1.0.6:
+    resolution: {integrity: sha512-hGySKX5XpSGyWgl8SivgD4SJPUISZSaMYHPtVE9Luyerr5HITgcDJyKG5yRMo9Iota3Ec8qrbXD540kc/lTfDw==}
+
   pdfjs-dist@5.4.394:
     resolution: {integrity: sha512-9ariAYGqUJzx+V/1W4jHyiyCep6IZALmDzoaTLZ6VNu8q9LWi1/ukhzHgE2Xsx96AZi0mbZuK4/ttIbqSbLypg==}
     engines: {node: '>=20.16.0 || >=22.3.0'}
@@ -127,6 +133,8 @@ snapshots:
       '@napi-rs/canvas-linux-x64-musl': 0.1.81
       '@napi-rs/canvas-win32-x64-msvc': 0.1.81
     optional: true
+
+  deepseek-api@1.0.6: {}
 
   pdfjs-dist@5.4.394:
     optionalDependencies:

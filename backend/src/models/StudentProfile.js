@@ -42,5 +42,5 @@ const StudentProfileSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Create and export the StudentProfile model
-const StudentProfile = mongoose.model('StudentProfile', StudentProfileSchema);
+const StudentProfile = mongoose.models.StudentProfile || mongoose.model('StudentProfile', StudentProfileSchema);
 export default StudentProfile;

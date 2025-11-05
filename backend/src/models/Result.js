@@ -59,7 +59,11 @@ const ResultSchema = new mongoose.Schema({
     type: Number,
     default: 1,
   },
+  resultsReleased: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
-const Result = mongoose.model('Result', ResultSchema);
+const Result = mongoose.models.Result || mongoose.model('Result', ResultSchema);
 export default Result;

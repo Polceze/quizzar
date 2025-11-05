@@ -32,5 +32,5 @@ const UnitSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
-const Unit = mongoose.model('Unit', UnitSchema);
+const Unit = mongoose.models.Unit || mongoose.model('Unit', UnitSchema);
 export default Unit;

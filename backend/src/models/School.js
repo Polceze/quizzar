@@ -55,5 +55,5 @@ SchoolSchema.index({ admin: 1 });
 SchoolSchema.index({ 'teachers.teacher': 1 });
 SchoolSchema.index({ students: 1 });
 
-const School = mongoose.model('School', SchoolSchema);
+const School = mongoose.models.School || mongoose.model('School', SchoolSchema);
 export default School;

@@ -79,5 +79,6 @@ UserSchema.virtual('userSchool', {
 UserSchema.set('toObject', { virtuals: true });
 UserSchema.set('toJSON', { virtuals: true });
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
 export default User;

@@ -240,7 +240,7 @@ const CreateSchoolWizard = () => {
         <div className="text-center mt-6">
           <button
             onClick={() => navigate('/')}
-            className="text-sm text-gray-600 hover:text-gray-800"
+            className="text-sm text-orange-600 hover:text-orange-800"
           >
             ← Back to Home
           </button>

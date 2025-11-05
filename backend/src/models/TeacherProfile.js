@@ -40,6 +40,6 @@ const TeacherProfileSchema = mongoose.Schema(
     }
 );
 
-const TeacherProfile = mongoose.model('TeacherProfile', TeacherProfileSchema);
+const TeacherProfile = mongoose.models.TeacherProfile || mongoose.model('TeacherProfile', TeacherProfileSchema);
 
 export default TeacherProfile;

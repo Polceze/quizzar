@@ -29,6 +29,9 @@ import SchoolAdminDashboard from './pages/admin/SchoolAdminDashboard';
 import CreateSchoolWizard from './pages/CreateSchoolWizard';
 import SchoolBrowserPage from './pages/SchoolBrowserPage';
 import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage';
+import TeacherAnalyticsPage from './pages/teacher/TeacherAnalyticsPage';
+import ExamDetailedAnalyticsPage from './pages/teacher/ExamDetailedAnalyticsPage';
+import UnitCompletionPage from './pages/teacher/UnitCompletionPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -87,10 +90,12 @@ function App() {
             <Route path="/teacher/units/:unitId/questions" element={<QuestionsPage />} />
             <Route path="/teacher/profile/form" element={<TeacherProfileForm />} />
             <Route path="/teacher/students" element={<TeacherStudentsPage />} />
-            {/* Exam Management Routes */}
             <Route path="/teacher/exams" element={<ExamListPage />} />
             <Route path="/teacher/exams/new" element={<ExamCreationPage />} /> 
             <Route path="/teacher/exams/:examId/edit" element={<ExamEditPage />} />
+            <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
+            <Route path="/teacher/analytics/exams/:examId" element={<ExamDetailedAnalyticsPage />} />
+            <Route path="/teacher/units/:unitId/completion" element={<UnitCompletionPage />} />
           </Route>
         </Route>
       </Route>

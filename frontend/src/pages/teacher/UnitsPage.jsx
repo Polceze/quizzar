@@ -22,7 +22,8 @@ const UnitsPage = () => {
       const res = await axios.get('/api/units', config);
       setUnits(res.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch units.');
+      console.error('Error fetching students:', err);
+      setError(`Failed to fetch units: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }

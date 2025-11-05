@@ -77,6 +77,15 @@ const Login = () => {
         <p className="text-center text-gray-600 text-sm mt-4">
           Don't have an account? <Link to="/register" className="text-indigo-600 hover:text-indigo-800 font-bold">Register here</Link>
         </p>
+        {/* Back to home link */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm text-orange-600 hover:text-orange-800"
+          >
+            ← Back to Home
+          </button>
+        </div>  
       </div>
     </div>
   );
