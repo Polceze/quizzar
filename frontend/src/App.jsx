@@ -32,6 +32,9 @@ import TeacherStudentsPage from './pages/teacher/TeacherStudentsPage';
 import TeacherAnalyticsPage from './pages/teacher/TeacherAnalyticsPage';
 import ExamDetailedAnalyticsPage from './pages/teacher/ExamDetailedAnalyticsPage';
 import UnitCompletionPage from './pages/teacher/UnitCompletionPage';
+import StudentAnalyticsPage from './pages/student/StudentAnalyticsPage';
+import StudentResultsPage from './pages/student/StudentResultsPage';
+import StudentResultDetailsPage from './pages/student/StudentResultDetailsPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -78,6 +81,9 @@ function App() {
             <Route path="/student/profile" element={<StudentProfileForm />} />
             <Route path="/student/exams/:examId/take" element={<StudentExamPage />} />
             <Route path="/student/exams/:examId/instructions" element={<ExamInstructionsPage />} />
+            <Route path="/student/analytics" element={<StudentAnalyticsPage />} />
+            <Route path="/student/results" element={<StudentResultsPage />} />
+            <Route path="/student/results/:attemptId" element={<StudentResultDetailsPage />} />
           </Route>
 
           {/* Teacher/Admin Routes */}

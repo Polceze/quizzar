@@ -10,6 +10,13 @@ import {
     getExamDetails
 } from '../controllers/studentExamController.js';
 
+import {
+    getStudentOverview,
+    getStudentResults,
+    getDetailedResult,
+    getComparativeAnalytics,
+} from '../controllers/studentAnalyticsController.js';
+
 const router = express.Router();
 const studentOnly = [protect, restrictTo('student')];
 
@@ -40,5 +47,17 @@ router.route('/attempts/:attemptId/violation')
 // Submit and grade the exam
 router.route('/exams/:attemptId/submit')
     .post(studentOnly, submitExam);
+
+router.route('/analytics/overview')
+    .get(studentOnly, getStudentOverview);
+
+router.route('/analytics/results')
+    .get(studentOnly, getStudentResults);
+
+router.route('/analytics/comparative')
+    .get(studentOnly, getComparativeAnalytics);
+
+router.route('/analytics/results/:attemptId')
+    .get(studentOnly, getDetailedResult);
 
 export default router;
