@@ -22,8 +22,15 @@ const UnitsPage = () => {
       const res = await axios.get('/api/units', config);
       setUnits(res.data);
     } catch (err) {
-      console.error('Error fetching students:', err);
-      setError(`Failed to fetch units: ${err.response?.data?.message || err.message}`);
+      console.error('Error fetching units:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to fetch units.';
+      
+      // Check if this is a role-based access error and handle it gracefully
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError(err.response?.data?.message);
+      } else {
+        setError(`Failed to fetch units: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -44,7 +51,12 @@ const UnitsPage = () => {
       // Update the local state to remove the deleted unit
       setUnits(units.filter(unit => unit._id !== unitId));
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete unit.');
+      const errorMessage = err.response?.data?.message || 'Failed to delete unit.';
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError('Access restricted: Only teachers can delete units.');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
@@ -58,8 +70,7 @@ const UnitsPage = () => {
   }, [fetchUnits]);
 
   if (loading) return <div className="p-8 text-center">Loading Units...</div>;
-  if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
-
+  
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl">
       <Link to="/teacher/dashboard" className="text-indigo-600 hover:text-indigo-800 text-sm mb-4 block">
@@ -75,7 +86,13 @@ const UnitsPage = () => {
         </button>
       </div>
 
-      {units.length === 0 ? (
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-500 mb-1 bg-red-50 rounded">{error}</p>
+        </div>
+      )}
+
+      {!error && units.length === 0 ? (
         <div className="text-center p-10 bg-gray-50 border-dashed border-2 rounded-lg">
           <p className="text-gray-500">You haven't created any units yet.</p>
           <p className="text-sm text-gray-400 mt-2">Create a unit to start building questions and exams.</p>

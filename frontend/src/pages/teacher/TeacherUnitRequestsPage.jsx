@@ -68,7 +68,7 @@ const TeacherUnitRequestsPage = () => {
             </div>
 
             {loading && <div className="p-8 text-center text-blue-600">Loading Requests...</div>}
-            {error && <p className="text-red-500 mb-4 p-3 bg-red-50 rounded">{error}</p>}
+            {error && <p className="text-red-500 mb-4 p-3 bg-red-50 border border-red-200 rounded">{error}</p>}
             {message && <p className="text-green-600 mb-4 p-3 bg-green-50 rounded">{message}</p>}
 
             {!loading && requests.length === 0 ? (

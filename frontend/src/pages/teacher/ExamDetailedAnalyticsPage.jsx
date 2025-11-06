@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import axios from 'axios';
+import ResultReleaseManager from '../../components/teacher/ResultReleaseManager';
 
 const ExamDetailedAnalyticsPage = () => {
   const { examId } = useParams();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [releasing, setReleasing] = useState(false);
   const { token } = useAuth();
 
   const fetchExamAnalytics = useCallback(async () => {
@@ -28,23 +28,6 @@ const ExamDetailedAnalyticsPage = () => {
     useEffect(() => {
     fetchExamAnalytics();
     }, [fetchExamAnalytics]); 
-
-  const handleResultsRelease = async (release) => {
-    try {
-      setReleasing(true);
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.put(`/api/teacher/analytics/exams/${examId}/results-release`, 
-        { release }, config);
-      
-      alert(`Results ${release ? 'released' : 'hidden'} successfully!`);
-      fetchExamAnalytics(); // Refresh data
-    } catch (err) {
-      setError(`Failed to ${release ? 'release' : 'hide'} results`);
-      console.error('Results release error:', err);
-    } finally {
-      setReleasing(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -81,23 +64,18 @@ const ExamDetailedAnalyticsPage = () => {
             {analytics.exam.totalMarks} marks • {analytics.exam.durationMinutes} minutes
           </p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => handleResultsRelease(true)}
-            disabled={releasing}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-          >
-            {releasing ? 'Releasing...' : 'Release Results'}
-          </button>
-          <button
-            onClick={() => handleResultsRelease(false)}
-            disabled={releasing}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50"
-          >
-            {releasing ? 'Hiding...' : 'Hide Results'}
-          </button>
-        </div>
       </div>
+
+      {/* Result Release Manager */}
+      <ResultReleaseManager 
+        examId={examId} 
+        onResultsReleased={(released) => {
+          // Refresh analytics data or show updated status
+          if (released) {
+            fetchExamAnalytics();
+          }
+        }}
+      />
 
       {/* Overview Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

@@ -35,6 +35,7 @@ import UnitCompletionPage from './pages/teacher/UnitCompletionPage';
 import StudentAnalyticsPage from './pages/student/StudentAnalyticsPage';
 import StudentResultsPage from './pages/student/StudentResultsPage';
 import StudentResultDetailsPage from './pages/student/StudentResultDetailsPage';
+import BatchResultManagementPage from './pages/teacher/BatchResultManagementPage';
 
 function App() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -102,6 +103,7 @@ function App() {
             <Route path="/teacher/analytics" element={<TeacherAnalyticsPage />} />
             <Route path="/teacher/analytics/exams/:examId" element={<ExamDetailedAnalyticsPage />} />
             <Route path="/teacher/units/:unitId/completion" element={<UnitCompletionPage />} />
+            <Route path="/teacher/results/batch" element={<BatchResultManagementPage />} />
           </Route>
         </Route>
       </Route>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth';
 import axios from 'axios';
+import PerformanceCharts from '../../components/student/PerformanceCharts';
 
 const StudentResultDetailsPage = () => {
   const { attemptId } = useParams();
@@ -130,6 +131,11 @@ const StudentResultDetailsPage = () => {
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
+          {/* Performance Charts */}
+          <PerformanceCharts 
+            performanceData={result.performance} 
+            questionAnalysis={result.questionAnalysis} 
+          />
           {/* Performance Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">

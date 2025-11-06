@@ -9,26 +9,36 @@ const TeacherAnalyticsPage = () => {
   const [studentPerformance, setStudentPerformance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { token } = useAuth();
+  const { token, role } = useAuth();
   const navigate = useNavigate();
+
+  const hasTeacherAccess = role === 'teacher';
+  // const isAdmin = role === 'admin';
 
   const fetchExamAnalytics = useCallback(async () => {
     try {
-        setLoading(true);
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get('/api/teacher/analytics/exams', config);
-        setExamAnalytics(res.data);
+      setLoading(true);
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.get('/api/teacher/analytics/exams', config);
+      setExamAnalytics(res.data);
     } catch (err) {
-        setError('Failed to load analytics data');
-        console.error('Analytics fetch error:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to load analytics data';
+      
+      // Check if this is a role-based access error and handle it gracefully
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError(err.response?.data?.message);
+      } else {
+        setError(errorMessage);
+      }
+      console.error('Analytics fetch error:', err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    }, [token]);
+  }, [token]);
 
-    useEffect(() => {
+  useEffect(() => {
     fetchExamAnalytics();
-    }, [fetchExamAnalytics]);
+  }, [fetchExamAnalytics]);
 
   const fetchStudentPerformance = async () => {
     try {
@@ -37,7 +47,7 @@ const TeacherAnalyticsPage = () => {
       const res = await axios.get('/api/teacher/analytics/students', config);
       setStudentPerformance(res.data);
     } catch (err) {
-      setError('Failed to load student performance data');
+      setError(err.response?.data?.message);
       console.error('Student performance fetch error:', err);
     } finally {
       setLoading(false);
@@ -58,6 +68,10 @@ const TeacherAnalyticsPage = () => {
     return 'text-red-600 bg-red-100';
   };
 
+  const handleRestrictedAction = () => {
+    alert('This feature is only available for teachers.');
+  };
+
   if (loading && activeTab === 'overview') {
     return (
       <div className="p-6 bg-white rounded-lg shadow-xl">
@@ -65,6 +79,9 @@ const TeacherAnalyticsPage = () => {
       </div>
     );
   }
+
+  // Check if user has access to view data
+  const hasDataAccess = hasTeacherAccess && !error;
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl">
@@ -76,7 +93,23 @@ const TeacherAnalyticsPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Exam Analytics</h1>
           <p className="text-gray-600">Track performance and student progress</p>
+          {/* {isAdmin && (
+            <p className="text-sm text-orange-600 mt-1">
+              Administrator View - Some features are restricted to teachers only
+            </p>
+          )} */}
         </div>
+        <Link
+          onClick={hasTeacherAccess ? () => navigate("/teacher/results/batch") : handleRestrictedAction}
+          className={`px-4 py-2 rounded-lg transition ${
+            hasTeacherAccess 
+              ? 'bg-green-600 text-white hover:bg-green-700' 
+              : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+          }`}
+          disabled={!hasTeacherAccess}
+        >
+          Batch Result Management
+        </Link>
       </div>
 
       {error && (
@@ -110,143 +143,151 @@ const TeacherAnalyticsPage = () => {
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div className="space-y-6">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-medium text-blue-800">Total Exams</h3>
-              <p className="text-2xl font-bold text-blue-600">{examAnalytics.length}</p>
+          {!hasDataAccess ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">No exam data available.</p>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h3 className="text-sm font-medium text-green-800">Active Exams</h3>
-              <p className="text-2xl font-bold text-green-600">
-                {examAnalytics.filter(exam => exam.exam.status === 'active').length}
-              </p>
-            </div>
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <h3 className="text-sm font-medium text-purple-800">Average Performance</h3>
-              <p className="text-2xl font-bold text-purple-600">
-                {examAnalytics.length > 0
-                  ? Math.round(
-                      examAnalytics.reduce((sum, exam) => sum + exam.statistics.averagePercentage, 0) /
-                        examAnalytics.length
-                    )
-                  : 0}
-                %
-              </p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <h3 className="text-sm font-medium text-orange-800">Total Students</h3>
-              <p className="text-2xl font-bold text-orange-600">
-                {examAnalytics.reduce((sum, exam) => sum + exam.statistics.totalStudents, 0)}
-              </p>
-            </div>
-          </div>
-
-          {/* Exams List */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Exam Performance</h2>
-            {examAnalytics.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-lg">
-                <p className="text-gray-500">No exam data available yet.</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Create and publish exams to see analytics here.
-                </p>
-              </div>
-            ) : (
-              examAnalytics.map((analytics) => (
-                <div
-                  key={analytics.exam._id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {analytics.exam.name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {analytics.exam.unit?.name} • {analytics.exam.questionCount} questions •{' '}
-                        {analytics.exam.totalMarks} marks
-                      </p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        analytics.exam.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : analytics.exam.status === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {analytics.exam.status.toUpperCase()}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-                    <div>
-                      <p className="text-sm text-gray-600">Students</p>
-                      <p className="font-semibold">{analytics.statistics.totalStudents}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Average Score</p>
-                      <p className="font-semibold">
-                        {analytics.statistics.averageScore.toFixed(1)} / {analytics.exam.totalMarks}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Average %</p>
-                      <p
-                        className={`font-semibold ${getPerformanceColor(
-                          analytics.statistics.averagePercentage
-                        )} px-2 py-1 rounded`}
-                      >
-                        {analytics.statistics.averagePercentage.toFixed(1)}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Completion</p>
-                      <p className="font-semibold">
-                        {analytics.statistics.completionRate.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Score Distribution */}
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">Score Distribution</p>
-                    <div className="flex space-x-2 text-xs">
-                      <div className="flex-1 text-center bg-green-100 text-green-800 py-1 rounded">
-                        Excellent: {analytics.statistics.scoreDistribution.excellent}
-                      </div>
-                      <div className="flex-1 text-center bg-blue-100 text-blue-800 py-1 rounded">
-                        Good: {analytics.statistics.scoreDistribution.good}
-                      </div>
-                      <div className="flex-1 text-center bg-yellow-100 text-yellow-800 py-1 rounded">
-                        Average: {analytics.statistics.scoreDistribution.average}
-                      </div>
-                      <div className="flex-1 text-center bg-red-100 text-red-800 py-1 rounded">
-                        Poor: {analytics.statistics.scoreDistribution.poor}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => navigate(`/teacher/analytics/exams/${analytics.exam._id}`)}
-                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                    >
-                      View Detailed Analytics →
-                    </button>
-                    <button
-                      onClick={() => navigate(`/teacher/units/${analytics.exam.unit?._id}/completion`)}
-                      className="text-gray-600 hover:text-gray-800 text-sm"
-                    >
-                      Completion Status
-                    </button>
-                  </div>
+          ) : (
+            <>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <h3 className="text-sm font-medium text-blue-800">Total Exams</h3>
+                  <p className="text-2xl font-bold text-blue-600">{examAnalytics.length}</p>
                 </div>
-              ))
-            )}
-          </div>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <h3 className="text-sm font-medium text-green-800">Active Exams</h3>
+                  <p className="text-2xl font-bold text-green-600">
+                    {examAnalytics.filter(exam => exam.exam.status === 'active').length}
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <h3 className="text-sm font-medium text-purple-800">Average Performance</h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {examAnalytics.length > 0
+                      ? Math.round(
+                          examAnalytics.reduce((sum, exam) => sum + exam.statistics.averagePercentage, 0) /
+                            examAnalytics.length
+                        )
+                      : 0}
+                    %
+                  </p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <h3 className="text-sm font-medium text-orange-800">Total Students</h3>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {examAnalytics.reduce((sum, exam) => sum + exam.statistics.totalStudents, 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Exams List */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-gray-800">Exam Performance</h2>
+                {examAnalytics.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">No exam data available yet.</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Create and publish exams to see analytics here.
+                    </p>
+                  </div>
+                ) : (
+                  examAnalytics.map((analytics) => (
+                    <div
+                      key={analytics.exam._id}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {analytics.exam.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {analytics.exam.unit?.name} • {analytics.exam.questionCount} questions •{' '}
+                            {analytics.exam.totalMarks} marks
+                          </p>
+                        </div>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            analytics.exam.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : analytics.exam.status === 'draft'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {analytics.exam.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-gray-600">Students</p>
+                          <p className="font-semibold">{analytics.statistics.totalStudents}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Average Score</p>
+                          <p className="font-semibold">
+                            {analytics.statistics.averageScore.toFixed(1)} / {analytics.exam.totalMarks}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Average %</p>
+                          <p
+                            className={`font-semibold ${getPerformanceColor(
+                              analytics.statistics.averagePercentage
+                            )} px-2 py-1 rounded`}
+                          >
+                            {analytics.statistics.averagePercentage.toFixed(1)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Completion</p>
+                          <p className="font-semibold">
+                            {analytics.statistics.completionRate.toFixed(1)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Score Distribution */}
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-600 mb-2">Score Distribution</p>
+                        <div className="flex space-x-2 text-xs">
+                          <div className="flex-1 text-center bg-green-100 text-green-800 py-1 rounded">
+                            Excellent: {analytics.statistics.scoreDistribution.excellent}
+                          </div>
+                          <div className="flex-1 text-center bg-blue-100 text-blue-800 py-1 rounded">
+                            Good: {analytics.statistics.scoreDistribution.good}
+                          </div>
+                          <div className="flex-1 text-center bg-yellow-100 text-yellow-800 py-1 rounded">
+                            Average: {analytics.statistics.scoreDistribution.average}
+                          </div>
+                          <div className="flex-1 text-center bg-red-100 text-red-800 py-1 rounded">
+                            Poor: {analytics.statistics.scoreDistribution.poor}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={() => navigate(`/teacher/analytics/exams/${analytics.exam._id}`)}
+                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                        >
+                          View Detailed Analytics →
+                        </button>
+                        <button
+                          onClick={() => navigate(`/teacher/units/${analytics.exam.unit?._id}/completion`)}
+                          className="text-gray-600 hover:text-gray-800 text-sm"
+                        >
+                          Completion Status
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -255,7 +296,11 @@ const TeacherAnalyticsPage = () => {
         <div>
           {loading ? (
             <div className="text-center py-8">Loading student performance...</div>
-          ) : studentPerformance ? (
+          ) : !hasDataAccess || !studentPerformance ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">No student performance data available.</p>
+            </div>
+          ) : (
             <div className="space-y-6">
               {/* Summary */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -360,10 +405,6 @@ const TeacherAnalyticsPage = () => {
                   ))
                 )}
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 bg-gray-50 rounded-lg">
-              <p className="text-gray-500">No student performance data available.</p>
             </div>
           )}
         </div>

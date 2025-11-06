@@ -70,22 +70,6 @@ const SchoolAdminDashboard = () => {
         </Link>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">Total Students</h3>
-          <p className="text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
-        </div>
-        <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-          <h3 className="text-lg font-semibold text-green-800 mb-2">Approved Teachers</h3>
-          <p className="text-3xl font-bold text-green-600">{stats.approvedTeachers}</p>
-        </div>
-        <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
-          <h3 className="text-lg font-semibold text-yellow-800 mb-2">Pending Teachers</h3>
-          <p className="text-3xl font-bold text-yellow-600">{stats.pendingTeachers}</p>
-        </div>
-      </div>
-
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex space-x-8">
@@ -113,6 +97,21 @@ const SchoolAdminDashboard = () => {
         <div>
           <h2 className="text-xl font-semibold mb-4">School Overview</h2>
           <div className="space-y-4">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Total Students</h3>
+                <p className="text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
+              </div>
+              <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                <h3 className="text-lg font-semibold text-green-800 mb-2">Approved Teachers</h3>
+                <p className="text-3xl font-bold text-green-600">{stats.approvedTeachers}</p>
+              </div>
+              <div className="bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                <h3 className="text-lg font-semibold text-yellow-800 mb-2">Pending Teachers</h3>
+                <p className="text-3xl font-bold text-yellow-600">{stats.pendingTeachers}</p>
+              </div>
+            </div>
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold mb-2">Quick Actions</h3>
               <div className="flex space-x-4">

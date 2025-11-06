@@ -11,7 +11,7 @@ import {
 const router = express.Router();
 
 // All routes are restricted to teachers only
-const teacherOnly = [protect, restrictTo('teacher')];
+const teacherOnly = [protect, restrictTo('teacher', 'admin')];
 
 // Exam analytics routes
 router.route('/exams')

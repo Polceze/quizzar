@@ -18,7 +18,14 @@ const ExamListPage = () => {
       const res = await axios.get('/api/exams', config); 
       setExams(res.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch exams.');
+      const errorMessage = err.response?.data?.message || 'Failed to fetch exams.';
+      
+      // Check if this is a role-based access error and handle it gracefully
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError(err.response?.data?.message);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -40,8 +47,12 @@ const ExamListPage = () => {
       alert(`Exam "${examName}" successfully deleted.`);
       fetchExams();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to delete exam.';
-      setError(msg);
+      const errorMessage = err.response?.data?.message || 'Failed to delete exam.';
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError('Access restricted: Only teachers can delete exams.');
+      } else {
+        setError(errorMessage);
+      }
     }
   };
 
@@ -58,8 +69,12 @@ const ExamListPage = () => {
       alert(`Exam "${examName}" published successfully!`);
       fetchExams();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to publish exam.';
-      setError(msg);
+      const errorMessage = err.response?.data?.message || 'Failed to publish exam.';
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError('Access restricted: Only teachers can publish exams.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -78,8 +93,12 @@ const ExamListPage = () => {
       alert(`Exam "${examName}" archived successfully!`);
       fetchExams();
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to archive exam.';
-      setError(msg);
+      const errorMessage = err.response?.data?.message || 'Failed to archive exam.';
+      if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
+        setError('Access restricted: Only teachers can archive exams.');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -94,9 +113,8 @@ const ExamListPage = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-red-600">Loading Exams...</div>;
-  if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
-
+  if (loading) return <div className="p-8 text-center text-blue-600">Loading Exams...</div>;
+  
   return (
     <div className="p-6 bg-white rounded-lg shadow-xl">
       <Link to="/teacher/dashboard" className="text-indigo-600 hover:text-indigo-800 text-sm mb-4 block">
@@ -112,9 +130,13 @@ const ExamListPage = () => {
         </Link>
       </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">{error}</div>}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-500 mb-1 bg-red-50 rounded">{error}</p>
+        </div>
+      )}
 
-      {exams.length === 0 ? (
+      {!error && exams.length === 0 ? (
         <div className="text-center p-10 bg-gray-50 border-dashed border-2 rounded-lg">
           <p className="text-gray-500">You haven't created any exams yet.</p>
           <p className="text-sm text-gray-400 mt-2">Click "Create New Exam" to begin.</p>

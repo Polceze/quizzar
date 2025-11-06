@@ -53,7 +53,7 @@ const TeacherStudentsPage = () => {
         }
       } catch (err) {
         console.error('Error fetching units:', err);
-        setError(`Failed to fetch units: ${err.response?.data?.message || err.message}`);
+        setError(`${err.response?.data?.message || err.message}`);
         setLoading(false);
       }
     };
