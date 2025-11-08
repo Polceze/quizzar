@@ -81,7 +81,7 @@ const Login = () => {
         <div className="text-center mt-6">
           <button
             onClick={() => navigate('/')}
-            className="text-sm text-orange-600 hover:text-orange-800"
+            className="text-sm text-grey-600 hover:text-orange-800"
           >
             ← Back to Home
           </button>

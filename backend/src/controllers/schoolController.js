@@ -1,3 +1,11 @@
+import TeacherProfile from '../models/TeacherProfile.js';
+import StudentProfile from '../models/StudentProfile.js';
+import Unit from '../models/Unit.js';
+import Exam from '../models/Exam.js';
+import StudentExamAttempt from '../models/StudentExamAttempt.js';
+import Result from '../models/Result.js';
+import Question from '../models/Question.js';
+import RegistrationRequest from '../models/RegistrationRequest.js';
 import School from '../models/School.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
@@ -298,5 +306,98 @@ export const createSchoolWithAdmin = async (req, res) => {
     if (session && session.id) {
       await session.endSession().catch(console.error);
     }
+  }
+};
+
+// @desc    Delete a school and all related data
+// @route   DELETE /api/schools/:schoolId
+// @access  Private/Admin
+export const deleteSchool = async (req, res) => {
+  try {
+    const schoolId = req.params.schoolId;
+    
+    // Find the school and verify the admin is the owner
+    const school = await School.findById(schoolId);
+    
+    if (!school) {
+      return res.status(404).json({ message: 'School not found' });
+    }
+
+    // Verify the requesting user is the admin of this school
+    if (school.admin.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this school' });
+    }
+
+    // Start a transaction to ensure data consistency
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Delete all related data
+      // 1. Remove school from all teacher profiles
+      await TeacherProfile.updateMany(
+        { school: schoolId },
+        { $unset: { school: 1 } },
+        { session }
+      );
+
+      // 2. Remove school from all student profiles
+      await StudentProfile.updateMany(
+        { school: schoolId },
+        { $unset: { school: 1 } },
+        { session }
+      );
+
+      // 3. Delete all units belonging to this school
+      await Unit.deleteMany({ school: schoolId }, { session });
+
+      // 4. Find all exams for this school and delete related data
+      const schoolExams = await Exam.find({ school: schoolId }, { _id: 1 }, { session });
+      const examIds = schoolExams.map(exam => exam._id);
+
+      // 5. Delete exam attempts, results, and questions
+      await StudentExamAttempt.deleteMany({ exam: { $in: examIds } }, { session });
+      await Result.deleteMany({ exam: { $in: examIds } }, { session });
+      await Question.deleteMany({ exam: { $in: examIds } }, { session });
+
+      // 6. Delete the exams themselves
+      await Exam.deleteMany({ school: schoolId }, { session });
+
+      // 7. Delete registration requests for this school
+      await RegistrationRequest.deleteMany({ school: schoolId }, { session });
+
+      // Delete all users associated with the school
+      console.log('Deleting users associated with the school...');
+      await User.deleteMany({ 
+        _id: { 
+          $in: [
+            ...school.teachers.map(t => t.teacher),
+            ...school.students.map(s => s.student),
+            school.admin
+          ]
+        }
+      });
+
+      // 8. Finally delete the school
+      await School.findByIdAndDelete(schoolId, { session });
+
+      await session.commitTransaction();
+      
+      res.status(200).json({ 
+        message: 'School and all related data deleted successfully' 
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+
+  } catch (error) {
+    console.error('Error deleting school:', error);
+    res.status(500).json({ 
+      message: 'Error deleting school', 
+      error: error.message 
+    });
   }
 };

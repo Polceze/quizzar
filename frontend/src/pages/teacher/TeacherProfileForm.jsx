@@ -36,7 +36,6 @@ const TeacherProfileForm = () => {
 
             try {
                 const config = { headers: { Authorization: `Bearer ${token}` } };
-                // Using the new teacher profile endpoint
                 const res = await axios.get('/api/teacher/profile', config);
                 
                 if (res.data.exists && res.data.profile) {

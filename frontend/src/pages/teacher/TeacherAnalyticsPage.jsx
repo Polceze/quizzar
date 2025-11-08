@@ -13,18 +13,36 @@ const TeacherAnalyticsPage = () => {
   const navigate = useNavigate();
 
   const hasTeacherAccess = role === 'teacher';
-  // const isAdmin = role === 'admin';
 
   const fetchExamAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get('/api/teacher/analytics/exams', config);
-      setExamAnalytics(res.data);
+      
+      // Fetch detailed analytics for each exam to get release status
+      const examsWithReleaseStatus = await Promise.all(
+        res.data.map(async (examData) => {
+          try {
+            const detailedRes = await axios.get(`/api/teacher/analytics/exams/${examData.exam._id}`, config);
+            return {
+              ...examData,
+              areResultsReleased: detailedRes.data.areResultsReleased || false
+            };
+          } catch (err) {
+            console.error(`Error fetching release status for exam ${examData.exam._id}:`, err);
+            return {
+              ...examData,
+              areResultsReleased: false
+            };
+          }
+        })
+      );
+      
+      setExamAnalytics(examsWithReleaseStatus);
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load analytics data';
       
-      // Check if this is a role-based access error and handle it gracefully
       if (errorMessage.includes('Role') && errorMessage.includes('not allowed')) {
         setError(err.response?.data?.message);
       } else {
@@ -68,6 +86,23 @@ const TeacherAnalyticsPage = () => {
     return 'text-red-600 bg-red-100';
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getReleaseStatusColor = (isReleased) => {
+    return isReleased ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800';
+  };
+
+  const getReleaseStatusText = (isReleased) => {
+    return isReleased ? 'Results Released' : 'Results Hidden';
+  };
+
   const handleRestrictedAction = () => {
     alert('This feature is only available for teachers.');
   };
@@ -80,7 +115,6 @@ const TeacherAnalyticsPage = () => {
     );
   }
 
-  // Check if user has access to view data
   const hasDataAccess = hasTeacherAccess && !error;
 
   return (
@@ -93,23 +127,23 @@ const TeacherAnalyticsPage = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Exam Analytics</h1>
           <p className="text-gray-600">Track performance and student progress</p>
-          {/* {isAdmin && (
-            <p className="text-sm text-orange-600 mt-1">
-              Administrator View - Some features are restricted to teachers only
-            </p>
-          )} */}
         </div>
-        <Link
-          onClick={hasTeacherAccess ? () => navigate("/teacher/results/batch") : handleRestrictedAction}
-          className={`px-4 py-2 rounded-lg transition ${
-            hasTeacherAccess 
-              ? 'bg-green-600 text-white hover:bg-green-700' 
-              : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-          }`}
-          disabled={!hasTeacherAccess}
-        >
-          Batch Result Management
-        </Link>
+        {hasTeacherAccess ? (
+          <Link
+            to="/teacher/results/batch"
+            className="px-4 py-2 rounded-lg transition bg-green-600 text-white hover:bg-green-700"
+          >
+            Batch Result Management
+          </Link>
+        ) : (
+          <button
+            onClick={handleRestrictedAction}
+            className="px-4 py-2 rounded-lg transition bg-gray-400 text-gray-200 cursor-not-allowed"
+            disabled
+          >
+            Batch Result Management
+          </button>
+        )}
       </div>
 
       {error && (
@@ -162,15 +196,9 @@ const TeacherAnalyticsPage = () => {
                   </p>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                  <h3 className="text-sm font-medium text-purple-800">Average Performance</h3>
+                  <h3 className="text-sm font-medium text-purple-800">Released Results</h3>
                   <p className="text-2xl font-bold text-purple-600">
-                    {examAnalytics.length > 0
-                      ? Math.round(
-                          examAnalytics.reduce((sum, exam) => sum + exam.statistics.averagePercentage, 0) /
-                            examAnalytics.length
-                        )
-                      : 0}
-                    %
+                    {examAnalytics.filter(exam => exam.areResultsReleased).length}
                   </p>
                 </div>
                 <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
@@ -197,27 +225,40 @@ const TeacherAnalyticsPage = () => {
                       key={analytics.exam._id}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-800">
-                            {analytics.exam.name}
-                          </h3>
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-800">
+                              {analytics.exam.name}
+                            </h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReleaseStatusColor(analytics.areResultsReleased)}`}>
+                              {getReleaseStatusText(analytics.areResultsReleased)}
+                            </span>
+                          </div>
                           <p className="text-sm text-gray-600">
                             {analytics.exam.unit?.name} • {analytics.exam.questionCount} questions •{' '}
                             {analytics.exam.totalMarks} marks
                           </p>
                         </div>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            analytics.exam.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : analytics.exam.status === 'draft'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {analytics.exam.status.toUpperCase()}
-                        </span>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(analytics.exam.status)}`}
+                          >
+                            {analytics.exam.status.toUpperCase()}
+                          </span>
+                          <button
+                            onClick={() => navigate(`/teacher/analytics/exams/${analytics.exam._id}`)}
+                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => navigate(`/teacher/units/${analytics.exam.unit?._id}/completion`)}
+                            className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition"
+                          >
+                            Completion
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
@@ -268,19 +309,19 @@ const TeacherAnalyticsPage = () => {
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center">
-                        <button
-                          onClick={() => navigate(`/teacher/analytics/exams/${analytics.exam._id}`)}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                        >
-                          View Detailed Analytics →
-                        </button>
-                        <button
-                          onClick={() => navigate(`/teacher/units/${analytics.exam.unit?._id}/completion`)}
-                          className="text-gray-600 hover:text-gray-800 text-sm"
-                        >
-                          Completion Status
-                        </button>
+                      {/* Release Status Summary */}
+                      <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                        <div className="text-sm text-gray-600">
+                          Results: <span className={`font-medium ${analytics.areResultsReleased ? 'text-green-600' : 'text-orange-600'}`}>
+                            {analytics.areResultsReleased ? 'Released to Students' : 'Hidden from Students'}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {analytics.statistics.totalStudents > 0 
+                            ? `${analytics.statistics.totalStudents} student(s) attempted` 
+                            : 'No attempts yet'
+                          }
+                        </div>
                       </div>
                     </div>
                   ))

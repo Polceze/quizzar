@@ -14,35 +14,50 @@ const BatchResultManagementPage = () => {
 
   const fetchExamsWithResults = useCallback(async () => {
     try {
-        setLoading(true);
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        
-        // Get teacher's exams
-        const examsRes = await axios.get('/api/exams', config);
-        const examsData = examsRes.data;
+      setLoading(true);
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Get teacher's exams
+      const examsRes = await axios.get('/api/exams', config);
+      const examsData = examsRes.data;
 
-        // Get result counts for each exam
-        const examsWithResults = await Promise.all(
+      // Get detailed analytics for each exam to check result release status
+      const examsWithResults = await Promise.all(
         examsData.map(async (exam) => {
+          try {
             const resultsRes = await axios.get(`/api/teacher/analytics/exams/${exam._id}`, config);
+            const analytics = resultsRes.data;
+            
             return {
-            ...exam,
-            totalAttempts: resultsRes.data.studentPerformance.length,
-            releasedCount: resultsRes.data.studentPerformance.filter(
-                student => student.resultsReleased
-            ).length,
+              ...exam,
+              totalAttempts: analytics.studentPerformance.length,
+              releasedCount: analytics.areResultsReleased ? analytics.studentPerformance.length : 0,
+              areResultsReleased: analytics.areResultsReleased || false,
+              updatedAt: exam.updatedAt || exam.createdAt || new Date().toISOString(),
+              analyticsData: analytics
             };
+          } catch (err) {
+            console.error(`Error fetching analytics for exam ${exam._id}:`, err);
+            return {
+              ...exam,
+              totalAttempts: 0,
+              releasedCount: 0,
+              areResultsReleased: false,
+              updatedAt: exam.updatedAt || exam.createdAt || new Date().toISOString(),
+              analyticsData: null
+            };
+          }
         })
-        );
+      );
 
-        setExams(examsWithResults);
+      setExams(examsWithResults);
     } catch (err) {
-        setError('Failed to load exams data');
-        console.error('Fetch exams error:', err);
+      setError('Failed to load exams data');
+      console.error('Fetch exams error:', err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-  }, [token]); // Include token as dependency since it's used in the API calls
+  }, [token]);
 
   useEffect(() => {
     fetchExamsWithResults();
@@ -66,9 +81,26 @@ const BatchResultManagementPage = () => {
     }
   };
 
+  // Calculate batch action counts
+  const getBatchActionCounts = () => {
+    const selectedExamData = exams.filter(exam => selectedExams.has(exam._id));
+    const releaseCount = selectedExamData.filter(exam => !exam.areResultsReleased).length;
+    const hideCount = selectedExamData.filter(exam => exam.areResultsReleased).length;
+    
+    return { releaseCount, hideCount };
+  };
+
   const handleBatchAction = async (action) => {
     if (selectedExams.size === 0) {
       setError('Please select at least one exam');
+      return;
+    }
+
+    const { releaseCount, hideCount } = getBatchActionCounts();
+    
+    // Check if there are any exams that can actually be processed for this action
+    if ((action === 'release' && releaseCount === 0) || (action === 'hide' && hideCount === 0)) {
+      setError(`No exams available to ${action === 'release' ? 'release' : 'hide'} results. Selected exams are already in the desired state.`);
       return;
     }
 
@@ -78,21 +110,29 @@ const BatchResultManagementPage = () => {
       setSuccess('');
 
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const examIds = Array.from(selectedExams);
+      // const examIds = Array.from(selectedExams);
 
-      // Perform batch action for each selected exam
+      // Filter exams that actually need this action
+      const examsToProcess = exams.filter(exam => 
+        selectedExams.has(exam._id) && 
+        ((action === 'release' && !exam.areResultsReleased) || 
+         (action === 'hide' && exam.areResultsReleased))
+      );
+
+      // Perform batch action for each selected exam that needs processing
       await Promise.all(
-        examIds.map(examId =>
+        examsToProcess.map(exam =>
           axios.put(
-            `/api/teacher/analytics/exams/${examId}/results-release`,
+            `/api/teacher/analytics/exams/${exam._id}/results-release`,
             { release: action === 'release' },
             config
           )
         )
       );
 
+      const processedCount = examsToProcess.length;
       setSuccess(
-        `Successfully ${action === 'release' ? 'released' : 'hidden'} results for ${examIds.length} exam(s)`
+        `Successfully ${action === 'release' ? 'released' : 'hidden'} results for ${processedCount} exam(s)`
       );
       
       // Refresh data
@@ -116,6 +156,16 @@ const BatchResultManagementPage = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const getReleaseStatusColor = (isReleased) => {
+    return isReleased ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+  };
+
+  const getReleaseStatusText = (isReleased) => {
+    return isReleased ? 'Results Released' : 'Results Hidden';
+  };
+
+  const { releaseCount, hideCount } = getBatchActionCounts();
 
   if (loading) {
     return (
@@ -158,23 +208,25 @@ const BatchResultManagementPage = () => {
               {selectedExams.size} exam(s) selected
             </h3>
             <p className="text-sm text-gray-600">
-              Choose an action for all selected exams
+              {releaseCount > 0 && `${releaseCount} can be released • `}
+              {hideCount > 0 && `${hideCount} can be hidden`}
+              {releaseCount === 0 && hideCount === 0 && selectedExams.size > 0 && 'All selected exams are already in the desired state'}
             </p>
           </div>
           <div className="flex space-x-3">
             <button
               onClick={() => handleBatchAction('release')}
-              disabled={actionLoading || selectedExams.size === 0}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              disabled={actionLoading || releaseCount === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {actionLoading ? 'Processing...' : 'Release All Results'}
+              {actionLoading ? 'Processing...' : `Release ${releaseCount > 0 ? releaseCount : ''} Results`}
             </button>
             <button
               onClick={() => handleBatchAction('hide')}
-              disabled={actionLoading || selectedExams.size === 0}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50"
+              disabled={actionLoading || hideCount === 0}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {actionLoading ? 'Processing...' : 'Hide All Results'}
+              {actionLoading ? 'Processing...' : `Hide ${hideCount > 0 ? hideCount : ''} Results`}
             </button>
           </div>
         </div>
@@ -216,21 +268,32 @@ const BatchResultManagementPage = () => {
                 />
                 
                 <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{exam.name || exam.title}</h3>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-800">{exam.name || exam.title}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReleaseStatusColor(exam.areResultsReleased)}`}>
+                          {getReleaseStatusText(exam.areResultsReleased)}
+                        </span>
+                      </div>
                       <p className="text-sm text-gray-600">
                         {exam.unit?.name} • {exam.questionCount || 0} questions • {exam.totalMarks || 0} marks
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 ml-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(exam.status)}`}>
                         {exam.status.toUpperCase()}
                       </span>
+                      <Link
+                        to={`/teacher/analytics/exams/${exam._id}`}
+                        className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                      >
+                        View Details
+                      </Link>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                     <div>
                       <span className="text-gray-600">Total Attempts:</span>
                       <span className="font-medium ml-2">{exam.totalAttempts}</span>
@@ -244,7 +307,7 @@ const BatchResultManagementPage = () => {
                       <span className="font-medium ml-2">{exam.totalAttempts - exam.releasedCount}</span>
                     </div>
                     <div>
-                      <span className="text-gray-600">Release Rate:</span>
+                      <span className="text-gray-600">Release Status:</span>
                       <span className="font-medium ml-2">
                         {exam.totalAttempts > 0 
                           ? ((exam.releasedCount / exam.totalAttempts) * 100).toFixed(1)
@@ -254,15 +317,12 @@ const BatchResultManagementPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-3">
-                    <Link
-                      to={`/teacher/analytics/exams/${exam._id}`}
-                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                    >
-                      View Analytics →
-                    </Link>
+                  <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
                     <div className="text-sm text-gray-500">
                       Last updated: {new Date(exam.updatedAt).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {exam.totalAttempts > 0 ? `${exam.totalAttempts} student(s) attempted` : 'No attempts yet'}
                     </div>
                   </div>
                 </div>

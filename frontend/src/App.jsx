@@ -84,7 +84,7 @@ function App() {
             <Route path="/student/exams/:examId/instructions" element={<ExamInstructionsPage />} />
             <Route path="/student/analytics" element={<StudentAnalyticsPage />} />
             <Route path="/student/results" element={<StudentResultsPage />} />
-            <Route path="/student/results/:attemptId" element={<StudentResultDetailsPage />} />
+            <Route path="/student/results/:resultId" element={<StudentResultDetailsPage />} />
           </Route>
 
           {/* Teacher/Admin Routes */}

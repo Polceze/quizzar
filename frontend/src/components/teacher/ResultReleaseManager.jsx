@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/useAuth';
 
-const ResultReleaseManager = ({ examId, onResultsReleased }) => {
+const ResultReleaseManager = ({ examId, examStatus, areResultsReleased, onResultsReleased }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentReleaseStatus, setCurrentReleaseStatus] = useState(areResultsReleased);
   const { token } = useAuth();
+
+  const isExamArchived = examStatus === 'archived';
 
   const handleReleaseResults = async (release) => {
     try {
@@ -21,7 +24,12 @@ const ResultReleaseManager = ({ examId, onResultsReleased }) => {
         config
       );
 
+      // Immediately update local state to reflect the new release status
+      setCurrentReleaseStatus(release);
+      
       setSuccess(`Results ${release ? 'released' : 'hidden'} successfully!`);
+      
+      // Notify parent component about the change
       if (onResultsReleased) {
         onResultsReleased(release);
       }
@@ -39,6 +47,16 @@ const ResultReleaseManager = ({ examId, onResultsReleased }) => {
     <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-3">Result Release Management</h3>
       
+      {!isExamArchived && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-3">
+          <p className="font-medium">Exam must be archived to release results</p>
+          <p className="text-sm mt-1">
+            Results can only be released to students after the exam has been archived. 
+            This ensures all students have completed the exam before results are visible.
+          </p>
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-3">
           {error}
@@ -54,8 +72,12 @@ const ResultReleaseManager = ({ examId, onResultsReleased }) => {
       <div className="flex flex-col sm:flex-row gap-3">
         <button
           onClick={() => handleReleaseResults(true)}
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
+          disabled={loading || !isExamArchived || currentReleaseStatus}
+          className={`px-4 py-2 rounded-lg flex items-center justify-center transition ${
+            !isExamArchived || currentReleaseStatus
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
         >
           {loading ? (
             <>
@@ -72,17 +94,27 @@ const ResultReleaseManager = ({ examId, onResultsReleased }) => {
 
         <button
           onClick={() => handleReleaseResults(false)}
-          disabled={loading}
-          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50"
+          disabled={loading || !isExamArchived || !currentReleaseStatus}
+          className={`px-4 py-2 rounded-lg transition ${
+            !isExamArchived || !currentReleaseStatus
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              : 'bg-orange-600 text-white hover:bg-orange-700'
+          }`}
         >
           Hide Results from Students
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mt-2">
-        Releasing results allows students to view their scores and detailed performance analysis.
-        Hiding results will prevent students from accessing this exam's results.
-      </p>
+      <div className="text-sm text-gray-600 mt-2 space-y-1">
+        <p className="flex items-center">
+          <span className={`w-2 h-2 rounded-full mr-2 ${isExamArchived ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+          Exam Status: <span className="font-medium ml-1">{isExamArchived ? 'Archived' : 'Active/Draft'}</span>
+        </p>
+        <p className="flex items-center">
+          <span className={`w-2 h-2 rounded-full mr-2 ${currentReleaseStatus ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+          Results Status: <span className="font-medium ml-1">{currentReleaseStatus ? 'Released to Students' : 'Hidden from Students'}</span>
+        </p>
+      </div>
     </div>
   );
 };

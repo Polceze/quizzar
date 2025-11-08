@@ -244,26 +244,26 @@ const StudentAnalyticsPage = () => {
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <h3 className="text-sm font-medium text-blue-800">Your Average</h3>
                   <p className="text-2xl font-bold text-blue-600">
-                    {comparative.overall.studentAverage.toFixed(1)}%
+                    {(comparative?.overall?.studentAverage || 0).toFixed(1)}%
                   </p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <h3 className="text-sm font-medium text-green-800">Class Average</h3>
                   <p className="text-2xl font-bold text-green-600">
-                    {comparative.overall.classAverage.toFixed(1)}%
+                    {(comparative?.overall?.classAverage || 0).toFixed(1)}%
                   </p>
                 </div>
                 <div className={`p-4 rounded-lg border ${
-                  comparative.overall.performanceGap >= 0
+                  (comparative?.overall?.performanceGap || 0) >= 0
                     ? 'bg-green-50 border-green-200'
                     : 'bg-red-50 border-red-200'
                 }`}>
                   <h3 className="text-sm font-medium text-gray-800">Performance Gap</h3>
                   <p className={`text-2xl font-bold ${
-                    comparative.overall.performanceGap >= 0 ? 'text-green-600' : 'text-red-600'
+                    (comparative?.overall?.performanceGap || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {comparative.overall.performanceGap >= 0 ? '+' : ''}
-                    {comparative.overall.performanceGap.toFixed(1)}%
+                    {(comparative?.overall?.performanceGap || 0) >= 0 ? '+' : ''}
+                    {(comparative?.overall?.performanceGap || 0).toFixed(1)}%
                   </p>
                 </div>
               </div>
@@ -272,7 +272,7 @@ const StudentAnalyticsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                   <h3 className="text-lg font-semibold text-green-800 mb-3">Strengths</h3>
-                  {comparative.strengths.length === 0 ? (
+                  {!comparative?.strengths || comparative.strengths.length === 0 ? (
                     <p className="text-green-700">No significant strengths identified yet.</p>
                   ) : (
                     <ul className="space-y-2">
@@ -288,7 +288,7 @@ const StudentAnalyticsPage = () => {
 
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                   <h3 className="text-lg font-semibold text-red-800 mb-3">Areas for Improvement</h3>
-                  {comparative.areasForImprovement.length === 0 ? (
+                  {!comparative?.areasForImprovement || comparative.areasForImprovement.length === 0 ? (
                     <p className="text-red-700">No significant areas for improvement identified.</p>
                   ) : (
                     <ul className="space-y-2">
@@ -307,7 +307,7 @@ const StudentAnalyticsPage = () => {
               <div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Unit Performance Comparison</h2>
                 <div className="space-y-4">
-                  {comparative.unitPerformance.map((unit) => (
+                  {comparative?.unitPerformance?.map((unit) => (
                     <div
                       key={unit.unit._id}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -324,10 +324,10 @@ const StudentAnalyticsPage = () => {
                             'bg-gray-100 text-gray-800'
                           }`}>
                             {unit.trend === 'above' ? 'Above Average' :
-                             unit.trend === 'below' ? 'Below Average' : 'Equal to Average'}
+                            unit.trend === 'below' ? 'Below Average' : 'Equal to Average'}
                           </span>
                           <p className="text-sm text-gray-600 mt-1">
-                            Percentile: {unit.percentile.toFixed(1)}%
+                            Percentile: {unit.percentile?.toFixed(1) || '0.0'}%
                           </p>
                         </div>
                       </div>
@@ -335,23 +335,27 @@ const StudentAnalyticsPage = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                           <p className="text-sm text-gray-600">Your Score</p>
-                          <p className="font-semibold text-blue-600">{unit.studentPerformance.toFixed(1)}%</p>
+                          <p className="font-semibold text-blue-600">
+                            {(unit.studentPerformance || 0).toFixed(1)}%
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Class Average</p>
-                          <p className="font-semibold text-gray-600">{unit.classAverage.toFixed(1)}%</p>
+                          <p className="font-semibold text-gray-600">
+                            {(unit.classAverage || 0).toFixed(1)}%
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Performance Gap</p>
                           <p className={`font-semibold ${
-                            unit.performanceGap >= 0 ? 'text-green-600' : 'text-red-600'
+                            (unit.performanceGap || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                           }`}>
-                            {unit.performanceGap >= 0 ? '+' : ''}{unit.performanceGap.toFixed(1)}%
+                            {(unit.performanceGap || 0) >= 0 ? '+' : ''}{(unit.performanceGap || 0).toFixed(1)}%
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Exams Taken</p>
-                          <p className="font-semibold">{unit.examCount}</p>
+                          <p className="font-semibold">{unit.examCount || 0}</p>
                         </div>
                       </div>
                     </div>

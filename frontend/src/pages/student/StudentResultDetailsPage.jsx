@@ -5,7 +5,7 @@ import axios from 'axios';
 import PerformanceCharts from '../../components/student/PerformanceCharts';
 
 const StudentResultDetailsPage = () => {
-  const { attemptId } = useParams();
+  const { resultId } = useParams();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,7 +16,7 @@ const StudentResultDetailsPage = () => {
     try {
         setLoading(true);
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get(`/api/student/analytics/results/${attemptId}`, config);
+        const res = await axios.get(`/api/student/analytics/results/${resultId}`, config);
         setResult(res.data);
     } catch (err) {
         if (err.response?.status === 403) {
@@ -28,7 +28,7 @@ const StudentResultDetailsPage = () => {
     } finally {
         setLoading(false);
     }
-  }, [attemptId, token]); 
+  }, [resultId, token]); 
 
   useEffect(() => {
   fetchResultDetails();

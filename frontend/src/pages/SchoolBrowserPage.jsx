@@ -95,9 +95,9 @@ const SchoolBrowserPage = () => {
             </Link>
           </div>
         ) : (
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,400px))] gap-6 justify-center">
             {schools.map((school) => (
-              <div key={school._id} className="w-full md:max-w-md bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+              <div key={school._id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{school.name}</h3>
                   <p className="text-gray-600 mb-4 line-clamp-2">

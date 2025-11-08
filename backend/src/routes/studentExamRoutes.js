@@ -57,7 +57,7 @@ router.route('/analytics/results')
 router.route('/analytics/comparative')
     .get(studentOnly, getComparativeAnalytics);
 
-router.route('/analytics/results/:attemptId')
+router.route('/analytics/results/:resultId')
     .get(studentOnly, getDetailedResult);
 
 export default router;

@@ -5,7 +5,7 @@ import { getTeacherProfile, createOrUpdateTeacherProfile } from '../controllers/
 const router = express.Router();
 
 // All routes here are private and restricted to teachers
-router.use(protect, restrictTo('teacher'));
+router.use(protect, restrictTo('teacher', 'admin'));
 
 // Teacher Profile Routes
 router.route('/profile') 

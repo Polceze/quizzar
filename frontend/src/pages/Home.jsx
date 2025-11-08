@@ -81,7 +81,7 @@ const Home = () => {
             </div>
             <h3 className="text-xl font-semibold mb-4">Exam Integrity</h3>
             <p className="text-gray-600">
-              Advanced anti-cheating features including full-screen mode and tab-switch detection.
+              Advanced anti-cheating features including tab-switch and application switch detection.
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ const Home = () => {
               <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-indigo-600 text-xl font-bold">3</span>
               </div>
-              <h3 className="font-semibold mb-2">Manage Classes</h3>
+              <h3 className="font-semibold mb-2">Manage Units</h3>
               <p className="text-sm text-gray-600">Teachers create units, students enroll</p>
             </div>
             <div className="text-center">

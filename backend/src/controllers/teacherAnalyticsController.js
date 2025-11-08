@@ -101,9 +101,20 @@ export const getExamDetailedAnalytics = async (req, res) => {
       return res.status(404).json({ message: 'Exam not found or access denied.' });
     }
 
-    // Get all attempts for this exam
+    // Check if results are released for this exam
+    const anyResult = await Result.findOne({ exam: examId });
+    const areResultsReleased = anyResult ? anyResult.resultsReleased : false;
+
+    // Get all attempts for this exam - FIXED: Simplified student population
     const attempts = await StudentExamAttempt.find({ exam: examId })
-      .populate('student', 'fullName email admissionNumber yearOfStudy')
+      .populate({
+        path: 'student',
+        select: 'email studentProfile', // Get basic user info
+        populate: {
+          path: 'studentProfile',
+          select: 'fullName admissionNumber yearOfStudy'
+        }
+      })
       .sort({ createdAt: -1 });
 
     const submittedAttempts = attempts.filter(attempt => 
@@ -133,26 +144,41 @@ export const getExamDetailedAnalytics = async (req, res) => {
       return {
         questionNumber: index + 1,
         questionId: question._id,
-        questionText: question.text.substring(0, 100) + (question.text.length > 100 ? '...' : ''),
-        points: question.points,
+        questionText: question.text?.substring(0, 100) + (question.text?.length > 100 ? '...' : '') || 'Question text not available',
+        points: question.points || 0,
         correctAnswers,
         accuracy: Math.round(accuracy * 100) / 100,
         totalAttempts: totalStudents,
       };
     });
 
-    // Student performance data
-    const studentPerformance = submittedAttempts.map(attempt => ({
-      student: attempt.student,
-      score: attempt.score,
-      percentage: attempt.percentage,
-      status: attempt.status,
-      startTime: attempt.startTime,
-      endTime: attempt.endTime,
-      timeSpent: attempt.endTime ? Math.floor((attempt.endTime - attempt.startTime) / 60000) : 0, // in minutes
-      violationCount: attempt.violationCount,
-      questionResults: attempt.questionResults,
-    }));
+    // Student performance data - FIXED: Handle StudentProfile data safely
+    const studentPerformance = submittedAttempts.map(attempt => {
+      // Safely get student data
+      const student = attempt.student;
+      const studentProfile = student.studentProfile || {};
+      
+      const fullName = studentProfile.fullName || student.email || 'Unknown Student';
+      const admissionNumber = studentProfile.admissionNumber || 'N/A';
+
+      return {
+        student: {
+          _id: student._id,
+          fullName,
+          admissionNumber,
+          email: student.email,
+          yearOfStudy: studentProfile.yearOfStudy || 'N/A'
+        },
+        score: attempt.score || 0,
+        percentage: attempt.percentage || 0,
+        status: attempt.status || 'unknown',
+        startTime: attempt.startTime,
+        endTime: attempt.endTime,
+        timeSpent: attempt.endTime ? Math.floor((attempt.endTime - attempt.startTime) / 60000) : 0,
+        violationCount: attempt.violationCount || 0,
+        questionResults: attempt.questionResults || [],
+      };
+    });
 
     // Score distribution
     const scoreRanges = [
@@ -165,7 +191,7 @@ export const getExamDetailedAnalytics = async (req, res) => {
     ];
 
     submittedAttempts.forEach(attempt => {
-      const percentage = attempt.percentage;
+      const percentage = attempt.percentage || 0;
       const range = scoreRanges.find(r => percentage >= r.min && percentage <= r.max);
       if (range) range.count++;
     });
@@ -173,11 +199,12 @@ export const getExamDetailedAnalytics = async (req, res) => {
     res.status(200).json({
       exam: {
         _id: exam._id,
-        name: exam.name,
-        unit: exam.unit,
-        totalMarks: exam.totalMarks,
-        durationMinutes: exam.durationMinutes,
-        questionCount: exam.questions.length,
+        name: exam.name || 'Unnamed Exam',
+        unit: exam.unit || { name: 'N/A', code: 'N/A' },
+        totalMarks: exam.totalMarks || 0,
+        durationMinutes: exam.durationMinutes || 0,
+        questionCount: exam.questions?.length || 0,
+        status: exam.status || 'draft',
         scheduledStart: exam.scheduledStart,
         scheduledEnd: exam.scheduledEnd,
       },
@@ -185,14 +212,15 @@ export const getExamDetailedAnalytics = async (req, res) => {
         totalStudents,
         averageScore: Math.round(averageScore * 100) / 100,
         averagePercentage: Math.round(averagePercentage * 100) / 100,
-        highestScore: totalStudents > 0 ? Math.max(...submittedAttempts.map(a => a.score)) : 0,
-        lowestScore: totalStudents > 0 ? Math.min(...submittedAttempts.map(a => a.score)) : 0,
+        highestScore: totalStudents > 0 ? Math.max(...submittedAttempts.map(a => a.score || 0)) : 0,
+        lowestScore: totalStudents > 0 ? Math.min(...submittedAttempts.map(a => a.score || 0)) : 0,
         completionRate: totalStudents > 0 ? (submittedAttempts.length / attempts.length) * 100 : 0,
-        totalViolations: submittedAttempts.reduce((sum, attempt) => sum + attempt.violationCount, 0),
+        totalViolations: submittedAttempts.reduce((sum, attempt) => sum + (attempt.violationCount || 0), 0),
       },
       questionAnalysis,
       studentPerformance,
       scoreDistribution: scoreRanges,
+      areResultsReleased, // ADD THIS FIELD
     });
 
   } catch (error) {

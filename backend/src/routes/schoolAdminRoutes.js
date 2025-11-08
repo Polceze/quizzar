@@ -3,7 +3,7 @@ import { protect, restrictTo } from '../middleware/authMiddleware.js';
 import { 
   manageTeacher, 
   removeStudent, 
-  getSchoolStats 
+  getSchoolStats
 } from '../controllers/schoolAdminController.js';
 
 const router = express.Router();

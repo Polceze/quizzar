@@ -23,7 +23,7 @@ const ExamDetailedAnalyticsPage = () => {
     } finally {
         setLoading(false);
     }
-    }, [examId, token]); // Include all dependencies used inside the function
+    }, [examId, token]);
 
     useEffect(() => {
     fetchExamAnalytics();
@@ -64,11 +64,20 @@ const ExamDetailedAnalyticsPage = () => {
             {analytics.exam.totalMarks} marks • {analytics.exam.durationMinutes} minutes
           </p>
         </div>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+          analytics.exam.status === 'active' ? 'bg-green-100 text-green-800' :
+          analytics.exam.status === 'archived' ? 'bg-gray-100 text-gray-800' :
+          'bg-yellow-100 text-yellow-800'
+        }`}>
+          {analytics.exam.status.toUpperCase()}
+        </span>
       </div>
 
       {/* Result Release Manager */}
       <ResultReleaseManager 
-        examId={examId} 
+        examId={examId}
+        examStatus={analytics.exam.status}
+        areResultsReleased={analytics.areResultsReleased}
         onResultsReleased={(released) => {
           // Refresh analytics data or show updated status
           if (released) {

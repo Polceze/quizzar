@@ -63,16 +63,7 @@ const TeacherDashboard = () => {
             <h2 className="text-xl font-semibold text-blue-700 mb-2">Manage Exams</h2>
             <p className="text-gray-600">Create, publish, review, and delete quizzes and tests.</p>
         </Link>
-        
-        {/* Card 5: Profile/Settings */}
-        <Link 
-            to="/teacher/profile/form" 
-            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-red-800"
-        >
-            <h2 className="text-xl font-semibold text-red-900 mb-2">My Profile & Settings</h2>
-            <p className="text-gray-600">Update account information and view credentials.</p>
-        </Link>
-
+      
         {/* Card: Analytics Dashboard */}
         <Link 
           to="/teacher/analytics" 
@@ -80,6 +71,15 @@ const TeacherDashboard = () => {
         >
           <h2 className="text-xl font-semibold text-purple-700 mb-2">Exam Analytics</h2>
           <p className="text-gray-600">View performance insights and student progress</p>
+        </Link>
+
+        {/* Card 5: Profile/Settings */}
+        <Link 
+            to="/teacher/profile/form" 
+            className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-red-800"
+        >
+            <h2 className="text-xl font-semibold text-red-900 mb-2">My Profile & Settings</h2>
+            <p className="text-gray-600">Update account information and view credentials.</p>
         </Link>
 
         {/* Card 6: Admin only - School administration */}

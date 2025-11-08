@@ -10,6 +10,10 @@ const SchoolAdminDashboard = () => {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const { token } = useAuth();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [schoolNameConfirm, setSchoolNameConfirm] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletionProgress, setDeletionProgress] = useState('');
 
   const fetchSchoolData = useCallback(async () => {
     try {
@@ -21,7 +25,7 @@ const SchoolAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [token]); // token is a dependency
+  }, [token]);
 
   useEffect(() => {
     fetchSchoolData();
@@ -49,6 +53,47 @@ const SchoolAdminDashboard = () => {
     const totalStudents = school.students.length;
 
     return { pendingTeachers, approvedTeachers, totalStudents };
+  };
+
+  const handleDeleteSchool = async () => {
+    if (schoolNameConfirm !== school.name) {
+      setError('School name does not match. Please type the school name exactly to confirm.');
+      return;
+    }
+
+    if (!window.confirm('This action is irreversible! All school data including teachers, students, exams, and results will be permanently deleted. Are you absolutely sure?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError('');
+    setMessage('');
+    
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      
+      // Show initial progress
+      setDeletionProgress('Executing the deletion process...');
+      
+      const res = await axios.delete(`/api/schools/${school._id}`, {
+        ...config,
+        // Add timeout since deletion might take time
+        timeout: 30000
+      });
+      
+      setDeletionProgress('Deletion completed! Redirecting...');
+      setMessage(res.data.message);
+      
+      // Redirect after a brief delay to show success message
+      setTimeout(() => {
+        window.location.href = '/schools';
+      }, 2000);
+      
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to delete school');
+      setIsDeleting(false);
+      setDeletionProgress('');
+    }
   };
 
   if (loading) return <div className="p-8 text-center">Loading School Data...</div>;
@@ -238,6 +283,71 @@ const SchoolAdminDashboard = () => {
               <button className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
                 Upgrade Plan
               </button>
+            </div>
+
+            {/* Dangerous Zone */}
+            <div className="bg-red-50 p-6 rounded-lg border border-red-200">
+              <h3 className="font-semibold text-red-800 mb-2">Danger Zone</h3>
+              <p className="text-sm text-red-600 mb-4">
+                Once you delete a school, there is no going back. Please be certain.
+              </p>
+              
+              {isDeleting ? (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600"></div>
+                    <div>
+                      <p className="text-red-700 font-medium">Deleting School Data...</p>
+                      <p className="text-sm text-red-600">{deletionProgress}</p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-red-200 rounded-full h-2">
+                    <div className="bg-red-600 h-2 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              ) : !deleteConfirm ? (
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                  Delete School
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-red-600 font-medium">
+                    Type the school name <strong>"{school.name}"</strong> to confirm deletion:
+                  </p>
+                  <input
+                    type="text"
+                    value={schoolNameConfirm}
+                    onChange={(e) => setSchoolNameConfirm(e.target.value)}
+                    placeholder={`Type "${school.name}" to confirm`}
+                    className="w-full p-2 border border-red-300 rounded text-sm"
+                  />
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleDeleteSchool}
+                      disabled={schoolNameConfirm !== school.name}
+                      className={`px-4 py-2 text-white rounded text-sm ${
+                        schoolNameConfirm === school.name
+                          ? 'bg-red-600 hover:bg-red-700'
+                          : 'bg-red-400 cursor-not-allowed'
+                      }`}
+                    >
+                      I understand, delete everything
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteConfirm(false);
+                        setSchoolNameConfirm('');
+                      }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

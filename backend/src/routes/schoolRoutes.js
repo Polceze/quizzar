@@ -5,7 +5,8 @@ import {
   getSchools, 
   joinSchool, 
   getAdminSchool,
-  createSchoolWithAdmin
+  createSchoolWithAdmin,
+  deleteSchool
 } from '../controllers/schoolController.js';
 import schoolAdminRoutes from './schoolAdminRoutes.js';
 
@@ -21,7 +22,8 @@ router.post('/', createSchool);
 router.post('/:schoolId/join', joinSchool);
 
 // Admin only routes
-router.get('/admin', restrictTo('admin'), getAdminSchool);
 router.use('/', restrictTo('admin'), schoolAdminRoutes);
+router.get('/admin', restrictTo('admin'), getAdminSchool);
+router.delete('/:schoolId', protect, restrictTo('admin'), deleteSchool);
 
 export default router;
