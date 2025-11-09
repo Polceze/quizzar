@@ -13,7 +13,7 @@ import School from '../models/School.js';
 
 const router = express.Router();
 
-// Test route to check database connection
+// Public routes - unprotected
 router.get('/test', async (req, res) => {
   try {
     const schoolCount = await School.countDocuments();
@@ -30,18 +30,18 @@ router.get('/test', async (req, res) => {
   }
 });
 
-// Public route - get all schools
 router.get('/', getSchools);
 router.post('/create-with-admin', createSchoolWithAdmin);
 
-// Protected routes
+// protect applied to all subsequent routes
 router.use(protect);
+
 router.post('/', createSchool);
 router.post('/:schoolId/join', joinSchool);
 
-// Admin only routes
+// ADMIN ROUTES
 router.use('/admin', restrictTo('admin'), schoolAdminRoutes);
 router.get('/admin', restrictTo('admin'), getAdminSchool);
-router.delete('/:schoolId', protect, restrictTo('admin'), deleteSchool);
+router.delete('/:schoolId', restrictTo('admin'), deleteSchool);
 
 export default router;

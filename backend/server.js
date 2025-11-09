@@ -31,13 +31,13 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 // --- 1. MIDDLEWARE SETUP ---
 
-// FIXED CORS Configuration
+// CORS Configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
     if (!origin) return callback(null, true);
     
-    // EXPLICITLY list all allowed origins - no wildcards
+    // Allowed origins - no wildcards
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
