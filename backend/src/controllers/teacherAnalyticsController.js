@@ -1,9 +1,7 @@
-import mongoose from 'mongoose';
 import Exam from '../models/Exam.js';
 import StudentExamAttempt from '../models/StudentExamAttempt.js';
 import Result from '../models/Result.js';
 import Unit from '../models/Unit.js';
-import User from '../models/user.js';
 
 // @desc    Get exam performance analytics for teacher
 // @route   GET /api/teacher/analytics/exams

@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
 import StudentExamAttempt from '../models/StudentExamAttempt.js';
 import Result from '../models/Result.js';
-import Exam from '../models/Exam.js';
-import Unit from '../models/Unit.js';
 import StudentProfile from '../models/StudentProfile.js';
 
 // @desc    Get student's overall performance dashboard
