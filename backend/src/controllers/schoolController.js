@@ -77,7 +77,7 @@ export const getSchools = async (req, res) => {
   try {
     console.log('Fetching schools...');
     
-    const schools = await schools.find({ isActive: true })
+    const schools = await School.find({ isActive: true })
       .select('name description subscriptionTier createdAt')
       .populate('admin', 'email')
       .limit(50);

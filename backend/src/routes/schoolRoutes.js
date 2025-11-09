@@ -9,6 +9,7 @@ import {
   deleteSchool
 } from '../controllers/schoolController.js';
 import schoolAdminRoutes from './schoolAdminRoutes.js';
+import School from '../models/School.js';
 
 const router = express.Router();
 
@@ -39,7 +40,7 @@ router.post('/', createSchool);
 router.post('/:schoolId/join', joinSchool);
 
 // Admin only routes
-router.use('/', restrictTo('admin'), schoolAdminRoutes);
+router.use('/admin', restrictTo('admin'), schoolAdminRoutes);
 router.get('/admin', restrictTo('admin'), getAdminSchool);
 router.delete('/:schoolId', protect, restrictTo('admin'), deleteSchool);
 

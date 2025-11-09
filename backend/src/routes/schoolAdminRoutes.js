@@ -13,6 +13,6 @@ router.use(protect, restrictTo('admin'));
 
 router.put('/teachers/:teacherId', manageTeacher);
 router.delete('/students/:studentId', removeStudent);
-router.get('/admin/stats', getSchoolStats);
+router.get('/stats', getSchoolStats);
 
 export default router;

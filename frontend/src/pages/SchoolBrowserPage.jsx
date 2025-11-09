@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 
 const SchoolBrowserPage = () => {
   const [schools, setSchools] = useState([]);
@@ -14,9 +14,12 @@ const SchoolBrowserPage = () => {
 
   const fetchSchools = async () => {
     try {
-      const res = await axios.get('/api/schools');
+      console.log('Fetching schools...');
+      const res = await api.get('/api/schools'); // Use the configured API
+      console.log('Schools data:', res.data);
       setSchools(res.data);
     } catch (err) {
+      console.error('Error fetching schools:', err);
       setError(err.response?.data?.message || 'Failed to load schools.');
     } finally {
       setLoading(false);
