@@ -31,25 +31,28 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 // --- 1. MIDDLEWARE SETUP ---
 
-// CORS Configuration
+// FIXED CORS Configuration
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
     if (!origin) return callback(null, true);
     
+    // EXPLICITLY list all allowed origins - no wildcards
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
-      process.env.CLIENT_URL, 
-      'https://*.netlify.app'
-    ].filter(Boolean); // Remove undefined values
+      'http://localhost:5173', // Vite default
+      'https://quizzar.netlify.app', // exact Netlify domain
+    ];
     
-    if (allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      (allowedOrigin.includes('*') && origin.endsWith('.netlify.app'))
-    )) {
+    console.log('🔍 Checking CORS for origin:', origin);
+    
+    // Check for exact match
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS Allowed for:', origin);
       callback(null, true);
     } else {
-      console.log('🚫 Blocked by CORS:', origin);
+      console.log('🚫 CORS Blocked for:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -64,6 +67,34 @@ app.use(cors(corsOptions));
 
 // Handle preflight requests globally
 app.options('*', cors(corsOptions));
+
+// Manual CORS headers as backup
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001', 
+    'http://localhost:5173',
+    'https://quizzar.netlify.app',
+    'https://quizzar-app.netlify.app',
+    'https://main--quizzar.netlify.app'
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    console.log('✅ Manual CORS headers applied for:', origin);
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Other middleware
 app.use(morgan('dev'));
@@ -84,18 +115,46 @@ app.get('/', (req, res) => {
     message: 'Quizzar API is running.', 
     environment: process.env.NODE_ENV || 'development',
     timestamp: new Date().toISOString(),
-    cors: 'Enabled with secure configuration'
+    cors: 'Enabled with secure configuration',
+    allowedOrigins: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:5173',
+      'https://quizzar.netlify.app'
+    ]
   });
 });
 
-// CORS test endpoint
+// Public CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
   res.status(200).json({
     message: 'CORS is working correctly!',
     origin: req.headers.origin || 'No origin header',
     timestamp: new Date().toISOString(),
-    allowed: true
+    allowed: true,
+    headers: {
+      'access-control-allow-origin': req.headers.origin || 'Not set'
+    }
   });
+});
+
+// Public schools test endpoint
+app.get('/api/schools-test', async (req, res) => {
+  try {
+    const School = await import('./src/models/School.js');
+    const schools = await School.default.find({ isActive: true })
+      .select('name description createdAt')
+      .limit(2);
+    
+    res.status(200).json({
+      message: 'Public schools test endpoint',
+      schools: schools,
+      origin: req.headers.origin,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // --- API Routes ---
@@ -134,7 +193,12 @@ app.use((err, req, res, next) => {
     return res.status(403).json({
       message: 'CORS policy: Access denied',
       origin: req.headers.origin,
-      allowedOrigins: ['http://localhost:3000', 'https://quizzar-app.netlify.app']
+      allowedOrigins: [
+        'http://localhost:3000',
+        'http://localhost:3001', 
+        'http://localhost:5173',
+        'https://quizzar.netlify.app'
+      ]
     });
   }
   
@@ -170,5 +234,11 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port: ${PORT}`);
   console.log(`Access the API via: http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`CORS enabled for: localhost:3000, localhost:3001, *.netlify.app`);
+  console.log(`✅ CORS enabled for:`);
+  console.log(`   - http://localhost:3000`);
+  console.log(`   - http://localhost:3001`);
+  console.log(`   - http://localhost:5173`);
+  console.log(`   - https://quizzar.netlify.app`);
+  console.log(`   - https://quizzar-app.netlify.app`);
+  console.log(`   - https://main--quizzar.netlify.app`);
 });
