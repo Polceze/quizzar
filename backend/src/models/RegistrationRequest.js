@@ -16,7 +16,6 @@ const RegistrationRequestSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
   },
-  // We can add a unique compound index to prevent double requests
   // student and unit must be unique together
 }, { timestamps: true });
 

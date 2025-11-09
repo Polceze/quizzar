@@ -67,7 +67,7 @@ UserSchema.virtual('teacherProfile', {
     justOne: true                 
 });
 
-// NEW: Virtual for School (links the User to their School document)
+// Virtual for School (links the User to their School document)
 UserSchema.virtual('userSchool', {
   ref: 'School',
   localField: 'school',
