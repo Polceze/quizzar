@@ -78,7 +78,7 @@ const SchoolBrowserPage = () => {
           </div>
         )}
 
-        {schools.length === 0 ? (
+        {Array.isArray(schools) && schools.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl">🏫</span>
@@ -96,7 +96,7 @@ const SchoolBrowserPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,400px))] gap-6 justify-center">
-            {schools.map((school) => (
+            {Array.isArray(schools) && schools.map((school) => (
               <div key={school._id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{school.name}</h3>

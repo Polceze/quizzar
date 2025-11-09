@@ -35,7 +35,10 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 // CORS configuration
 app.use(cors({
-  origin: true, // Allow all origins temporarily
+  origin: [
+    process.env.CLIENT_URL,
+    'http://localhost:3000'
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -82,18 +85,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Root route
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  app.get('*', (req, res, next) => {
-    if (!req.path.startsWith('/api')) {
-      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-    } else {
-      next();
-    }
-  });
-}
-
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ 
@@ -111,7 +102,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Catch-all handler for non-API routes - FIXED: Use proper pattern
+// Catch-all handler for non-API routes
 app.use((req, res) => {
   if (!req.path.startsWith('/api')) {
     res.status(404).json({ 

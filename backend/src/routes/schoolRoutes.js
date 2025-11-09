@@ -12,6 +12,23 @@ import schoolAdminRoutes from './schoolAdminRoutes.js';
 
 const router = express.Router();
 
+// Test route to check database connection
+router.get('/test', async (req, res) => {
+  try {
+    const schoolCount = await School.countDocuments();
+    res.status(200).json({ 
+      message: 'Database connection successful',
+      schoolCount 
+    });
+  } catch (error) {
+    console.error('Database test error:', error);
+    res.status(500).json({ 
+      message: 'Database connection failed',
+      error: error.message 
+    });
+  }
+});
+
 // Public route - get all schools
 router.get('/', getSchools);
 router.post('/create-with-admin', createSchoolWithAdmin);

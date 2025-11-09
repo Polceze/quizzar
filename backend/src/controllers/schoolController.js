@@ -75,14 +75,22 @@ export const createSchool = async (req, res) => {
 // @access  Public
 export const getSchools = async (req, res) => {
   try {
+    console.log('Fetching schools...');
+    
     const schools = await School.find({ isActive: true })
       .select('name description subscriptionTier createdAt')
       .populate('admin', 'email')
-      .limit(50); // Limit for performance
+      .limit(50);
 
+    console.log(`Found ${schools.length} schools`);
+    
     res.status(200).json(schools);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getSchools:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch schools',
+      error: error.message 
+    });
   }
 };
 
