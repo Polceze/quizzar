@@ -30,9 +30,45 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // --- 1. MIDDLEWARE SETUP ---
-app.use(cors());
+
+// CORS Configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      process.env.CLIENT_URL, 
+      'https://*.netlify.app'
+    ].filter(Boolean); // Remove undefined values
+    
+    if (allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      (allowedOrigin.includes('*') && origin.endsWith('.netlify.app'))
+    )) {
+      callback(null, true);
+    } else {
+      console.log('🚫 Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  maxAge: 86400
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// Handle preflight requests globally
+app.options('*', cors(corsOptions));
+
+// Other middleware
 app.use(morgan('dev'));
-app.use(express.json()); 
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- 2. DATABASE CONNECTION ---
 mongoose.connect(MONGODB_URI)
@@ -46,7 +82,19 @@ mongoose.connect(MONGODB_URI)
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Quizzar API is running.', 
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
+    cors: 'Enabled with secure configuration'
+  });
+});
+
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.status(200).json({
+    message: 'CORS is working correctly!',
+    origin: req.headers.origin || 'No origin header',
+    timestamp: new Date().toISOString(),
+    allowed: true
   });
 });
 
@@ -66,8 +114,61 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/teacher/analytics', teacherAnalyticsRoutes);
 app.use('/api/school-admin', schoolAdminRoutes);
 
-// --- 4. START SERVER ---
+// --- 4. ERROR HANDLING MIDDLEWARE ---
+
+// 404 handler for undefined routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    message: `Route ${req.originalUrl} not found`,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('🔥 Server Error:', err);
+  
+  // CORS errors
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      message: 'CORS policy: Access denied',
+      origin: req.headers.origin,
+      allowedOrigins: ['http://localhost:3000', 'https://quizzar-app.netlify.app']
+    });
+  }
+  
+  // Mongoose validation errors
+  if (err.name === 'ValidationError') {
+    const errors = Object.values(err.errors).map(e => e.message);
+    return res.status(400).json({
+      message: 'Validation Error',
+      errors: errors
+    });
+  }
+  
+  // Mongoose duplicate key errors
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    return res.status(400).json({
+      message: `Duplicate ${field} found`,
+      value: err.keyValue[field]
+    });
+  }
+  
+  // Default error
+  res.status(err.status || 500).json({
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message,
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+  });
+});
+
+// --- 5. START SERVER ---
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port: ${PORT}`);
   console.log(`Access the API via: http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`CORS enabled for: localhost:3000, localhost:3001, *.netlify.app`);
 });
