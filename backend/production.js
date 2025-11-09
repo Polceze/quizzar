@@ -34,15 +34,28 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // CORS configuration
-app.use(cors({
-  origin: [
-    process.env.CLIENT_URL,
-    'http://localhost:3000'
-  ].filter(Boolean),
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+  'https://quizzar.netlify.app',
+  'https://quizzar-app.netlify.app',
+  'https://main--quizzar.netlify.app'
+];
+
+const corsOptions = {
+  origin: allowedOrigins.filter(Boolean), 
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'], 
+  maxAge: 86400 // Optional: can improve performance by caching preflight results
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
+// *** Global Pre-flight Handler ***
+// This is essential for non-simple requests (like those with Authorization headers)
+app.options('*', cors(corsOptions));
 
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
