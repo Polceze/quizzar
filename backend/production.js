@@ -49,7 +49,7 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Database Connection with better error handling
+// Database Connection
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
@@ -76,7 +76,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/teacher/analytics', teacherAnalyticsRoutes);
 app.use('/api/school-admin', schoolAdminRoutes);
 
-// Health check route (essential for Render)
+// Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
@@ -91,8 +91,7 @@ app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Quizzar API is running.', 
     environment: process.env.NODE_ENV || 'production',
-    version: '1.0.0',
-    docs: '/api/docs' // API docs can be added later
+    version: '1.0.0'
   });
 });
 
@@ -100,11 +99,23 @@ app.get('/', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
   
-  // Catch-all handler for SPA
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  app.get('*', (req, res, next) => {
+    // Only handle SPA routes that don't start with /api
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    } else {
+      next();
+    }
   });
 }
+
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ 
+    message: 'API endpoint not found',
+    path: req.originalUrl
+  });
+});
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
@@ -115,12 +126,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ 
-    message: 'API endpoint not found',
-    path: req.originalUrl
-  });
+// Catch-all handler for non-API routes - FIXED: Use proper pattern
+app.use((req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.status(404).json({ 
+      message: 'Route not found',
+      path: req.originalUrl
+    });
+  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
