@@ -15,7 +15,7 @@ const SchoolBrowserPage = () => {
   const fetchSchools = async () => {
     try {
       console.log('Fetching schools...');
-      const res = await api.get('https://quizzar-llj0.onrender.com/api/schools');
+      const res = await api.get('/api/schools');
       console.log('🟡 Fetching schools from:', `${api.defaults.baseURL}/api/schools`);
       console.log('Schools data:', res.data);
       setSchools(res.data);

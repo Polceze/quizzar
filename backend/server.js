@@ -50,6 +50,28 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
+// DEBUG: Log all incoming requests and CORS headers
+app.use((req, res, next) => {
+  console.log('🌐 Incoming Request:', {
+    method: req.method,
+    url: req.url,
+    origin: req.headers.origin,
+    'user-agent': req.headers['user-agent']
+  });
+  
+  // Add CORS headers manually as backup
+  const origin = req.headers.origin;
+  if (origin && corsOptions.origin.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', corsOptions.methods.join(','));
+    res.header('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(','));
+    res.header('Access-Control-Allow-Credentials', 'true');
+    console.log('✅ Manual CORS headers applied for:', origin);
+  }
+  
+  next();
+});
+
 // Handle preflight requests globally
 app.options('*', cors(corsOptions));
 
@@ -91,6 +113,15 @@ app.get('/api/cors-test', (req, res) => {
     origin: req.headers.origin || 'No origin header',
     timestamp: new Date().toISOString(),
     allowed: true
+  });
+});
+
+// Simple public test endpoint
+app.get('/test-cors', (req, res) => {
+  res.json({
+    message: 'CORS test successful!',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
   });
 });
 
