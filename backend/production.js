@@ -33,13 +33,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Enhanced CORS configuration
+// CORS configuration
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL,
-    'https://your-quizzar-frontend.netlify.app',
-    'http://localhost:3000'
-  ].filter(Boolean),
+  origin: true, // Allow all origins temporarily
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
