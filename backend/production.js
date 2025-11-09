@@ -87,20 +87,9 @@ app.get('/health', (req, res) => {
 });
 
 // Root route
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: 'Quizzar API is running.', 
-    environment: process.env.NODE_ENV || 'production',
-    version: '1.0.0'
-  });
-});
-
-// Serve static files in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  
   app.get('*', (req, res, next) => {
-    // Only handle SPA routes that don't start with /api
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
     } else {
