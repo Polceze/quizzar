@@ -1,17 +1,18 @@
 class AIService {
   constructor() {
-    // Flexible configuration from environment variables
     this.apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
-    this.apiUrl = process.env.AI_API_URL;
-    this.model = process.env.AI_MODEL;
+    
+    // Get model from environment or use default
+    const model = process.env.AI_MODEL || 'gemini-2.0-flash-001';
+    this.apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     
     console.log('🔧 AI Service Configuration:');
     console.log('🔐 API Key present:', !!this.apiKey);
     console.log('🌐 API URL:', this.apiUrl);
-    console.log('🤖 Model:', this.model);
+    console.log('🤖 Model:', model);
     
     if (!this.apiKey) {
-      console.error('❌ AI_API_KEY or GEMINI_API_KEY is missing from environment variables');
+      console.error('❌ GEMINI_API_KEY is missing from environment variables');
     }
   }
 
