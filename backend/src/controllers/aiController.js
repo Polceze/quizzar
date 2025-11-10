@@ -1,9 +1,10 @@
 import Question from '../models/Question.js';
 import Unit from '../models/Unit.js';
+import AIService from '../services/aiService.js';
 
 // Free AI API configuration
 const AI_API_KEY = process.env.AI_API_KEY || 'free';
-const AI_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const AI_API_URL = 'https://api.mistral.ai/v1/chat/completions';
 
 // @desc    Generate questions using AI
 // @route   POST /api/ai/generate-questions
@@ -416,12 +417,12 @@ Return exactly the specified number of questions in the format above. Do not inc
 `;
 };
 
-// Use the same parsing logic
+// parsing logic
 const parseAIResponse = (text, expectedMCQCount, expectedTFCount) => {
   return parseGeminiResponse(text, expectedMCQCount, expectedTFCount);
 };
 
-// Keep the same parsing function
+// parsing function
 const parseGeminiResponse = (text, expectedMCQCount, expectedTFCount) => {
   const questions = [];
   

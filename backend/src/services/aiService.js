@@ -1,7 +1,7 @@
 class AIService {
   constructor() {
-    this.apiKey = process.env.DEEPSEEK_API_KEY;
-    this.apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+    this.apiKey = process.env.AI_API_KEY;
+    this.apiUrl = 'https://api.mistral.ai/v1/chat/completions';
   }
 
   // Test API connection
@@ -74,7 +74,7 @@ class AIService {
     }
   }
 
-  // Keep the same buildPrompt and parseAIResponse methods
+  // buildPrompt specifically designed for free iter openrouter.ai
   buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty) {
     return `
 You are an expert educational content creator. Generate ${numQuestions} exam questions based on the following study material.
