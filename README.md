@@ -1,6 +1,6 @@
 # Quizzar - AI-Powered Examination Platform
 
-![Quizzar Banner](https://via.placeholder.com/1200x400/3B82F6/FFFFFF?text=Quizzar+AI+Powered+Exams)
+[![PLP Final Project](https://img.shields.io/badge/PLP-July'25-Final--8A2BE2?style=for-the-badge)](https://www.powerlearnprojectafrica.org/)[![SDG 4 - Quality Education](https://img.shields.io/badge/SDG-4_Quality_Education-0A96D6?style=for-the-badge&logo=un&logoColor=white)](https://sdgs.un.org/goals/goal4)[![Academic Project](https://img.shields.io/badge/Final-Project-8A2BE2?style=for-the-badge)](https://github.com/polceze/quizzar)
 
 ## 🎯 Overview
 
