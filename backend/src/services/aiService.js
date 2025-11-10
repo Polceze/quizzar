@@ -2,8 +2,8 @@ class AIService {
   constructor() {
     // Flexible configuration from environment variables
     this.apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
-    this.apiUrl = process.env.AI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent';
-    this.model = process.env.AI_MODEL || 'gemini-1.5-flash-001';
+    this.apiUrl = process.env.AI_API_URL;
+    this.model = process.env.AI_MODEL;
     
     console.log('🔧 AI Service Configuration:');
     console.log('🔐 API Key present:', !!this.apiKey);
