@@ -37,7 +37,7 @@ const SchoolAdminDashboard = () => {
     
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.put(`/api/schools/teachers/${teacherId}`, { action }, config);
+      const res = await axios.put(`/api/schools/admin/teachers/${teacherId}`, { action }, config);
       setMessage(res.data.message);
       fetchSchoolData(); // Refresh data
     } catch (err) {
