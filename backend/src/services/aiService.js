@@ -1,106 +1,57 @@
 class AIService {
   constructor() {
     this.apiKey = process.env.AI_API_KEY;
-    this.apiUrl = 'https://api.mistral.ai/v1/chat/completions';
-    
-    // Add debugging
-    console.log('🔐 API Key present:', !!this.apiKey);
-    if (!this.apiKey) {
-      console.error('❌ AI_API_KEY is missing from environment variables');
-    }
+    this.apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
   }
 
-  // Test API connection
-  async testConnection() {
-    try {
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
-          model: "mistral-tiny", // Use Mistral model instead
-          messages: [{ role: "user", content: "Hello" }],
-          max_tokens: 10
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API Error Response:', errorText);
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
-      }
-
-      return { success: true, message: 'Mistral API connected successfully' };
-    } catch (error) {
-      console.error('Mistral API Connection Error:', error);
-      return { success: false, message: `Mistral API connection failed: ${error.message}` };
-    }
-  }
-
-  // Generate questions from study material
   async generateQuestions(studyMaterial, specifications) {
-    try {
-      const { numQuestions, questionTypes, difficulty } = specifications;
-      
-      const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
-      
-      // Use Mistral models
-      const requestBody = {
-        model: "mistral-large-latest", // Or "mistral-medium", "mistral-small"
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-        stream: false
-      };
+    const { numQuestions, questionTypes, difficulty } = specifications;
+    const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
+    
+    const models = [
+      "google/gemma-7b-it:free",
+      "meta-llama/llama-3.1-8b-instruct:free",
+      "microsoft/wizardlm-2-8x22b:free"
+    ];
 
-      console.log('📤 Sending request to Mistral API...');
-      console.log('🔧 Request model:', requestBody.model);
+    for (const model of models) {
+      try {
+        console.log(`🔄 Trying model: ${model}`);
+        const response = await fetch(this.apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+            'HTTP-Referer': 'https://quizzar-black.vercel.app',
+            'X-Title': 'Quizzar App'
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 2000
+          })
+        });
 
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log('📥 Response status:', response.status);
-      
-      if (!response.ok) {
-        let errorDetail = '';
-        try {
-          const errorData = await response.json();
-          errorDetail = JSON.stringify(errorData);
-          console.error('❌ Mistral API error details:', errorDetail);
-        } catch (e) {
-          errorDetail = await response.text();
-          console.error('❌ Mistral API error text:', errorDetail);
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`✅ Success with model: ${model}`);
+          return this.parseAIResponse(data.choices[0].message.content);
         }
         
-        throw new Error(`Mistral API error: ${response.status} ${response.statusText} - ${errorDetail}`);
+        if (response.status === 429) {
+          console.log(`⏳ Rate limited on ${model}, trying next...`);
+          continue;
+        }
+      } catch (error) {
+        console.log(`❌ ${model} failed:`, error.message);
+        continue;
       }
-
-      const data = await response.json();
-      console.log('✅ Mistral API response received successfully');
-      
-      const text = data.choices[0].message.content;
-      console.log('📄 Raw AI response preview:', text.substring(0, 200) + '...');
-      
-      return this.parseAIResponse(text);
-      
-    } catch (error) {
-      console.error('AI Question Generation Error:', error);
-      throw new Error(`Failed to generate questions: ${error.message}`);
     }
+    
+    throw new Error('All free AI services are currently busy. Please try again in a moment.');
   }
+
 
 
   // buildPrompt specifically designed for free iter openrouter.ai
