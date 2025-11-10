@@ -36,7 +36,21 @@ class AIService {
       console.log('📥 Response status:', response.status);
 
       if (!response.ok) {
-        const errorDetail = await this.getErrorDetails(response);
+        let errorDetail;
+        try {
+          errorDetail = await response.text(); // Read as text first
+          try {
+            // Try to parse as JSON for better error messages
+            const errorJson = JSON.parse(errorDetail);
+            errorDetail = JSON.stringify(errorJson);
+          } catch {
+            // Keep as text if not JSON
+          }
+        } catch (e) {
+          errorDetail = `Cannot read error response: ${e.message}`;
+        }
+        
+        console.error('❌ AI API error details:', errorDetail);
         throw new Error(`AI API error: ${response.status} - ${errorDetail}`);
       }
 
@@ -59,13 +73,14 @@ class AIService {
   // Helper methods for different AI providers
   getApiEndpoint() {
     if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
-      // Gemini - API key in URL
-      return `${this.apiUrl}?key=${this.apiKey}`;
-    } else if (this.apiUrl.includes('openrouter.ai')) {
-      // OpenRouter
-      return this.apiUrl;
+      // Gemini - API key in URL, ensure correct endpoint format
+      let baseUrl = this.apiUrl;
+      if (!baseUrl.includes(':generateContent')) {
+        baseUrl = baseUrl.replace(/\/[^/]*$/, ':generateContent');
+      }
+      return `${baseUrl}?key=${this.apiKey}`;
     } else {
-      // Mistral, OpenAI, etc. - API key in headers
+      // Other providers
       return this.apiUrl;
     }
   }
