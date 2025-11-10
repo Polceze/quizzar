@@ -2,6 +2,12 @@ class AIService {
   constructor() {
     this.apiKey = process.env.AI_API_KEY;
     this.apiUrl = 'https://api.mistral.ai/v1/chat/completions';
+    
+    // Add debugging
+    console.log('🔐 API Key present:', !!this.apiKey);
+    if (!this.apiKey) {
+      console.error('❌ AI_API_KEY is missing from environment variables');
+    }
   }
 
   // Test API connection
@@ -14,57 +20,79 @@ class AIService {
           'Authorization': `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "mistral-tiny", // Use Mistral model instead
           messages: [{ role: "user", content: "Hello" }],
           max_tokens: 10
         })
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error Response:', errorText);
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
 
-      return { success: true, message: 'DeepSeek API connected successfully' };
+      return { success: true, message: 'Mistral API connected successfully' };
     } catch (error) {
-      console.error('DeepSeek API Connection Error:', error);
-      return { success: false, message: `DeepSeek API connection failed: ${error.message}` };
+      console.error('Mistral API Connection Error:', error);
+      return { success: false, message: `Mistral API connection failed: ${error.message}` };
     }
   }
 
-  // Generate questions from study material (ONLY MCQ and True/False)
+  // Generate questions from study material
   async generateQuestions(studyMaterial, specifications) {
     try {
       const { numQuestions, questionTypes, difficulty } = specifications;
       
       const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
       
+      // Use Mistral models
+      const requestBody = {
+        model: "mistral-large-latest", // Or "mistral-medium", "mistral-small"
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        stream: false
+      };
+
+      console.log('📤 Sending request to Mistral API...');
+      console.log('🔧 Request model:', requestBody.model);
+
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        body: JSON.stringify({
-          model: "deepseek-chat",
-          messages: [
-            {
-              role: "user",
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-          stream: false
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('📥 Response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+        let errorDetail = '';
+        try {
+          const errorData = await response.json();
+          errorDetail = JSON.stringify(errorData);
+          console.error('❌ Mistral API error details:', errorDetail);
+        } catch (e) {
+          errorDetail = await response.text();
+          console.error('❌ Mistral API error text:', errorDetail);
+        }
+        
+        throw new Error(`Mistral API error: ${response.status} ${response.statusText} - ${errorDetail}`);
       }
 
       const data = await response.json();
+      console.log('✅ Mistral API response received successfully');
+      
       const text = data.choices[0].message.content;
+      console.log('📄 Raw AI response preview:', text.substring(0, 200) + '...');
       
       return this.parseAIResponse(text);
       
@@ -73,6 +101,7 @@ class AIService {
       throw new Error(`Failed to generate questions: ${error.message}`);
     }
   }
+
 
   // buildPrompt specifically designed for free iter openrouter.ai
   buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty) {
