@@ -5,13 +5,6 @@
       "destination": "https://quizzar-llj0.onrender.com/api/$1"
     }
   ],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "outputDirectory": "dist"
-      }
-    }
-  ]
+  "installCommand": "npm install", 
+  "buildCommand": "pnpm run build" 
 }

@@ -58,7 +58,7 @@ const Register = () => {
     e.preventDefault();
     setError(null);
 
-    // NEW: Validate school selection
+    // Validate school selection
     if (!formData.school) {
       setError('Please select a school to join.');
       return;
