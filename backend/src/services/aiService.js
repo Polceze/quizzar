@@ -1,11 +1,17 @@
 class AIService {
   constructor() {
+    // Flexible configuration from environment variables
     this.apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
-    this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    this.apiUrl = process.env.AI_API_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent';
+    this.model = process.env.AI_MODEL || 'gemini-1.5-flash-001';
     
-    console.log('🔐 Gemini API Key present:', !!this.apiKey);
+    console.log('🔧 AI Service Configuration:');
+    console.log('🔐 API Key present:', !!this.apiKey);
+    console.log('🌐 API URL:', this.apiUrl);
+    console.log('🤖 Model:', this.model);
+    
     if (!this.apiKey) {
-      console.error('❌ GEMINI_API_KEY is missing from environment variables');
+      console.error('❌ AI_API_KEY or GEMINI_API_KEY is missing from environment variables');
     }
   }
 
@@ -16,11 +22,77 @@ class AIService {
       console.log('📝 Building prompt...');
       const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
       
-      const requestBody = {
+      const requestBody = this.buildRequestBody(prompt);
+      
+      console.log('📤 Sending request to AI API...');
+      console.log('🌐 Endpoint:', this.getApiEndpoint());
+      
+      const response = await fetch(this.getApiEndpoint(), {
+        method: 'POST',
+        headers: this.getApiHeaders(),
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('📥 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorDetail = await this.getErrorDetails(response);
+        throw new Error(`AI API error: ${response.status} - ${errorDetail}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ AI API response received');
+      
+      const text = this.extractResponseText(data);
+      console.log('📄 Response content preview:', text.substring(0, 200) + '...');
+      
+      const questions = this.parseAIResponse(text);
+      console.log(`✅ Successfully parsed ${questions.length} questions`);
+      return questions;
+      
+    } catch (error) {
+      console.error('💥 AI Generation Error:', error);
+      throw new Error(`Failed to generate questions: ${error.message}`);
+    }
+  }
+
+  // Helper methods for different AI providers
+  getApiEndpoint() {
+    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
+      // Gemini - API key in URL
+      return `${this.apiUrl}?key=${this.apiKey}`;
+    } else if (this.apiUrl.includes('openrouter.ai')) {
+      // OpenRouter
+      return this.apiUrl;
+    } else {
+      // Mistral, OpenAI, etc. - API key in headers
+      return this.apiUrl;
+    }
+  }
+
+  getApiHeaders() {
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (this.apiUrl.includes('openrouter.ai')) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      headers['HTTP-Referer'] = 'https://quizzar-black.vercel.app';
+      headers['X-Title'] = 'Quizzar App';
+    } else if (this.apiUrl.includes('api.mistral.ai') || this.apiUrl.includes('api.openai.com')) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+    // Gemini doesn't need Authorization header - key is in URL
+
+    return headers;
+  }
+
+  buildRequestBody(prompt) {
+    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
+      // Gemini format
+      return {
         contents: [{
-          parts: [{
-            text: prompt
-          }]
+          parts: [{ text: prompt }]
         }],
         generationConfig: {
           temperature: 0.7,
@@ -29,51 +101,38 @@ class AIService {
           topK: 40
         }
       };
+    } else {
+      // OpenAI/Mistral/OpenRouter format
+      return {
+        model: this.model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000
+      };
+    }
+  }
 
-      console.log('📤 Sending request to Gemini API...');
-      
-      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      console.log('📥 Response status:', response.status);
-
-      if (!response.ok) {
-        let errorDetail = '';
-        try {
-          const errorData = await response.json();
-          errorDetail = JSON.stringify(errorData);
-          console.error('❌ Gemini API error details:', errorDetail);
-        } catch (e) {
-          errorDetail = await response.text();
-          console.error('❌ Gemini API error text:', errorDetail);
-        }
-        
-        throw new Error(`Gemini API error: ${response.status} - ${errorDetail}`);
+  extractResponseText(data) {
+    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
+      // Gemini format
+      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return data.candidates[0].content.parts[0].text;
       }
-
-      const data = await response.json();
-      console.log('✅ Gemini API response received');
-      
-      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        const text = data.candidates[0].content.parts[0].text;
-        console.log('📄 Response content preview:', text.substring(0, 200) + '...');
-        
-        const questions = this.parseAIResponse(text);
-        console.log(`✅ Successfully parsed ${questions.length} questions`);
-        return questions;
-      } else {
-        console.error('❌ Unexpected Gemini response format:', data);
-        throw new Error('Unexpected response format from Gemini API');
+    } else {
+      // OpenAI/Mistral/OpenRouter format
+      if (data.choices?.[0]?.message?.content) {
+        return data.choices[0].message.content;
       }
-      
-    } catch (error) {
-      console.error('💥 Gemini AI Error:', error);
-      throw new Error(`Failed to generate questions: ${error.message}`);
+    }
+    throw new Error('Unexpected response format from AI API');
+  }
+
+  async getErrorDetails(response) {
+    try {
+      const errorData = await response.json();
+      return JSON.stringify(errorData);
+    } catch (e) {
+      return await response.text();
     }
   }
 
@@ -133,8 +192,8 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
     try {
       console.log('🔄 Parsing AI response...');
       
-      // Clean the response text - remove markdown code blocks if present
       let cleanText = responseText.trim();
+      
       if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```/, '');
       } else if (cleanText.startsWith('```')) {
@@ -143,33 +202,29 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
       
       cleanText = cleanText.trim();
 
-      // Extract JSON from the response
       const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         console.error('❌ No JSON array found in response');
-        console.log('📄 Raw response:', responseText);
         throw new Error('No valid JSON array found in AI response');
       }
       
       const questions = JSON.parse(jsonMatch[0]);
       console.log(`✅ Parsed ${questions.length} questions`);
       
-      // Validate and normalize the questions
       const validQuestions = questions.map((q, index) => {
         const validType = q.questionType === 'true_false' ? 'true_false' : 'multiple_choice';
         
         let options = q.options || [];
-        if (validType === 'true_false' && options.length !== 2) {
+        if (validType === 'true_false') {
           options = ['True', 'False'];
-        }
-        if (validType === 'multiple_choice' && options.length !== 4) {
+        } else if (validType === 'multiple_choice' && options.length !== 4) {
           options = options.slice(0, 4);
           while (options.length < 4) {
             options.push(`Option ${options.length + 1}`);
           }
         }
         
-        let correctAnswer = q.correctAnswer;
+        let correctAnswer = parseInt(q.correctAnswer) || 0;
         if (correctAnswer < 0 || correctAnswer >= options.length) {
           correctAnswer = 0;
         }
@@ -188,40 +243,52 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
       
     } catch (error) {
       console.error('❌ AI Response Parsing Error:', error);
-      console.log('📄 Raw response that failed to parse:', responseText);
       throw new Error(`Failed to parse AI response: ${error.message}`);
     }
   }
 
-  // Test method for Gemini
   async testConnection() {
     try {
-      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+      const testPrompt = "Reply with only the word 'Success'";
+      const requestBody = this.buildRequestBody(testPrompt);
+      
+      const response = await fetch(this.getApiEndpoint(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: "Say 'Hello World' in 3 words or less."
-            }]
-          }],
-          generationConfig: {
-            maxOutputTokens: 10
-          }
-        })
+        headers: this.getApiHeaders(),
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('🧪 Test response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        const errorDetail = await this.getErrorDetails(response);
+        throw new Error(`API test failed: ${response.status} - ${errorDetail}`);
       }
 
-      return { success: true, message: 'Gemini API connected successfully' };
+      const data = await response.json();
+      const text = this.extractResponseText(data);
+      
+      return { 
+        success: true, 
+        message: 'AI API connected successfully',
+        provider: this.getProviderName(),
+        model: this.model
+      };
     } catch (error) {
-      console.error('Gemini API Connection Error:', error);
-      return { success: false, message: `Gemini API connection failed: ${error.message}` };
+      console.error('AI API Connection Error:', error);
+      return { 
+        success: false, 
+        message: `AI API connection failed: ${error.message}` 
+      };
     }
+  }
+
+  getProviderName() {
+    if (this.apiUrl.includes('generativelanguage.googleapis.com')) return 'Gemini';
+    if (this.apiUrl.includes('openrouter.ai')) return 'OpenRouter';
+    if (this.apiUrl.includes('api.mistral.ai')) return 'Mistral';
+    if (this.apiUrl.includes('api.openai.com')) return 'OpenAI';
+    return 'Unknown';
   }
 }
 

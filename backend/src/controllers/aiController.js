@@ -2,6 +2,24 @@ import Question from '../models/Question.js';
 import Unit from '../models/Unit.js';
 import AIService from '../services/aiService.js';
 
+// @desc    Get AI configuration
+// @route   GET /api/ai/config
+// @access  Private/Teacher
+export const getAIConfig = async (req, res) => {
+  try {
+    const config = {
+      provider: AIService.getProviderName(),
+      apiUrl: process.env.AI_API_URL ? '***' : 'Not set',
+      model: process.env.AI_MODEL || 'Default',
+      hasApiKey: !!(process.env.GEMINI_API_KEY || process.env.AI_API_KEY)
+    };
+    
+    res.json({ success: true, config });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // @desc    Generate questions using AI
 // @route   POST /api/ai/generate-questions
 // @access  Private/Teacher
