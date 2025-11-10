@@ -33,37 +33,21 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// CORS configuration
+// --- CORS Configuration ---
+
+// Define the full list of allowed origins once
 const allowedOrigins = [
   'http://localhost:3000',
   process.env.CLIENT_URL,
   'https://quizzar.netlify.app',
   'https://quizzar-app.netlify.app',
   'https://main--quizzar.netlify.app',
-  'https://quizzar-black.vercel.app'
-];
+  'https://quizzar-black.vercel.app', // Vercel production domain
+  'https://*.vercel.app' // Safer for Vercel preview URLs
+].filter(Boolean); // Filter out any empty/undefined environment variable entries
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      process.env.CLIENT_URL,
-      'https://quizzar.netlify.app',
-      'https://quizzar-app.netlify.app',
-      'https://main--quizzar.netlify.app',
-      'https://quizzar-black.vercel.app'
-    ].filter(Boolean);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('🚫 CORS blocked for origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
@@ -72,33 +56,14 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Apply CORS middleware
-app.use(cors({
-  origin: [
-    process.env.CLIENT_URL,
-    'http://localhost:3000'
-  ].filter(Boolean),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// 1. Primary CORS Middleware (Handles simple requests like GET /api/schools)
+app.use(cors(corsOptions));
 
+// 2. Global Pre-flight Handler (Handles complex requests like POST login/register)
+app.options('*', cors(corsOptions));
 
-// *** Global Pre-flight Handler ***
-// This is essential for non-simple requests (like those with Authorization headers)
-app.options('*', cors({
-  origin: [
-    process.env.CLIENT_URL,
-    'http://localhost:3000',
-    'https://quizzar.netlify.app',
-    'https://quizzar-app.netlify.app',
-    'https://main--quizzar.netlify.app',
-    'https://quizzar-black.vercel.app'
-  ].filter(Boolean),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// --- END CORS Configuration ---
+
 
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
