@@ -1,47 +1,82 @@
 class AIService {
   constructor() {
-    this.apiKey = process.env.GROQ_API_KEY; // Get from https://groq.com
-    this.apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    this.apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+    this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    
+    console.log('🔐 Gemini API Key present:', !!this.apiKey);
+    if (!this.apiKey) {
+      console.error('❌ GEMINI_API_KEY is missing from environment variables');
+    }
   }
 
   async generateQuestions(studyMaterial, specifications) {
-    const models = [
-      "llama-3.1-8b-instant", // Fast & free
-      "llama-3.2-3b-preview", // Lightweight
-      "mixtral-8x7b-32768"    // Higher quality
-    ];
-
-    for (const model of models) {
-      try {
-        const response = await fetch(this.apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: [{
-              role: "user", 
-              content: this.buildPrompt(studyMaterial, specifications)
-            }],
-            temperature: 0.7,
-            max_tokens: 2000
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          return this.parseAIResponse(data.choices[0].message.content);
+    try {
+      const { numQuestions, questionTypes, difficulty } = specifications;
+      
+      console.log('📝 Building prompt...');
+      const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
+      
+      const requestBody = {
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2000,
+          topP: 0.8,
+          topK: 40
         }
-      } catch (error) {
-        continue;
+      };
+
+      console.log('📤 Sending request to Gemini API...');
+      
+      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log('📥 Response status:', response.status);
+
+      if (!response.ok) {
+        let errorDetail = '';
+        try {
+          const errorData = await response.json();
+          errorDetail = JSON.stringify(errorData);
+          console.error('❌ Gemini API error details:', errorDetail);
+        } catch (e) {
+          errorDetail = await response.text();
+          console.error('❌ Gemini API error text:', errorDetail);
+        }
+        
+        throw new Error(`Gemini API error: ${response.status} - ${errorDetail}`);
       }
+
+      const data = await response.json();
+      console.log('✅ Gemini API response received');
+      
+      if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+        const text = data.candidates[0].content.parts[0].text;
+        console.log('📄 Response content preview:', text.substring(0, 200) + '...');
+        
+        const questions = this.parseAIResponse(text);
+        console.log(`✅ Successfully parsed ${questions.length} questions`);
+        return questions;
+      } else {
+        console.error('❌ Unexpected Gemini response format:', data);
+        throw new Error('Unexpected response format from Gemini API');
+      }
+      
+    } catch (error) {
+      console.error('💥 Gemini AI Error:', error);
+      throw new Error(`Failed to generate questions: ${error.message}`);
     }
-    throw new Error('Groq services are busy. Please try again.');
   }
 
-  // buildPrompt specifically designed for free iter openrouter.ai
   buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty) {
     return `
 You are an expert educational content creator. Generate ${numQuestions} exam questions based on the following study material.
@@ -90,46 +125,53 @@ EXAMPLE FORMAT:
   }
 ]
 
-Generate the questions now. ONLY include ${questionTypes.join(' and ')} questions:
+Generate the questions now. ONLY include ${questionTypes.join(' and ')} questions. Return ONLY the JSON array, no other text:
 `;
   }
 
   parseAIResponse(responseText) {
     try {
+      console.log('🔄 Parsing AI response...');
+      
+      // Clean the response text - remove markdown code blocks if present
+      let cleanText = responseText.trim();
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.replace(/```json\n?/, '').replace(/\n?```/, '');
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/```\n?/, '').replace(/\n?```/, '');
+      }
+      
+      cleanText = cleanText.trim();
+
       // Extract JSON from the response
-      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+      const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
+        console.error('❌ No JSON array found in response');
+        console.log('📄 Raw response:', responseText);
         throw new Error('No valid JSON array found in AI response');
       }
       
       const questions = JSON.parse(jsonMatch[0]);
+      console.log(`✅ Parsed ${questions.length} questions`);
       
-      // Validate the structure and filter only allowed types
-      if (!Array.isArray(questions)) {
-        throw new Error('AI response is not an array');
-      }
-      
+      // Validate and normalize the questions
       const validQuestions = questions.map((q, index) => {
-        // Ensure question type is valid
         const validType = q.questionType === 'true_false' ? 'true_false' : 'multiple_choice';
         
-        // Ensure options array is properly formatted
         let options = q.options || [];
         if (validType === 'true_false' && options.length !== 2) {
           options = ['True', 'False'];
         }
         if (validType === 'multiple_choice' && options.length !== 4) {
-          // If not 4 options, pad or truncate
           options = options.slice(0, 4);
           while (options.length < 4) {
             options.push(`Option ${options.length + 1}`);
           }
         }
         
-        // Ensure correctAnswer is within bounds
         let correctAnswer = q.correctAnswer;
         if (correctAnswer < 0 || correctAnswer >= options.length) {
-          correctAnswer = 0; // Default to first option if invalid
+          correctAnswer = 0;
         }
         
         return {
@@ -145,8 +187,40 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
       return validQuestions;
       
     } catch (error) {
-      console.error('AI Response Parsing Error:', error);
-      throw new Error(`Failed to parse AI response: ${error.message}. Raw response: ${responseText}`);
+      console.error('❌ AI Response Parsing Error:', error);
+      console.log('📄 Raw response that failed to parse:', responseText);
+      throw new Error(`Failed to parse AI response: ${error.message}`);
+    }
+  }
+
+  // Test method for Gemini
+  async testConnection() {
+    try {
+      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: "Say 'Hello World' in 3 words or less."
+            }]
+          }],
+          generationConfig: {
+            maxOutputTokens: 10
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+
+      return { success: true, message: 'Gemini API connected successfully' };
+    } catch (error) {
+      console.error('Gemini API Connection Error:', error);
+      return { success: false, message: `Gemini API connection failed: ${error.message}` };
     }
   }
 }
