@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import api from '../utils/api';
 import { useAuth } from '../context/useAuth';
 
@@ -66,7 +65,7 @@ const Register = () => {
     }
 
     try {
-      const res = await axios.post('/api/auth/register', formData);
+      const res = await api.post('/api/auth/register', formData);
       const { token, ...userWithoutToken } = res.data;
       login(userWithoutToken, token);
       navigate('/dashboard', { replace: true });
