@@ -1,33 +1,30 @@
 class AIService {
   constructor() {
-    this.apiKey = process.env.AI_API_KEY;
-    this.apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+    this.apiKey = process.env.GROQ_API_KEY; // Get from https://groq.com
+    this.apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
   }
 
   async generateQuestions(studyMaterial, specifications) {
-    const { numQuestions, questionTypes, difficulty } = specifications;
-    const prompt = this.buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty);
-    
     const models = [
-      "google/gemma-7b-it:free",
-      "meta-llama/llama-3.1-8b-instruct:free",
-      "microsoft/wizardlm-2-8x22b:free"
+      "llama-3.1-8b-instant", // Fast & free
+      "llama-3.2-3b-preview", // Lightweight
+      "mixtral-8x7b-32768"    // Higher quality
     ];
 
     for (const model of models) {
       try {
-        console.log(`🔄 Trying model: ${model}`);
         const response = await fetch(this.apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-            'HTTP-Referer': 'https://quizzar-black.vercel.app',
-            'X-Title': 'Quizzar App'
+            'Authorization': `Bearer ${this.apiKey}`
           },
           body: JSON.stringify({
             model: model,
-            messages: [{ role: "user", content: prompt }],
+            messages: [{
+              role: "user", 
+              content: this.buildPrompt(studyMaterial, specifications)
+            }],
             temperature: 0.7,
             max_tokens: 2000
           })
@@ -35,24 +32,14 @@ class AIService {
 
         if (response.ok) {
           const data = await response.json();
-          console.log(`✅ Success with model: ${model}`);
           return this.parseAIResponse(data.choices[0].message.content);
         }
-        
-        if (response.status === 429) {
-          console.log(`⏳ Rate limited on ${model}, trying next...`);
-          continue;
-        }
       } catch (error) {
-        console.log(`❌ ${model} failed:`, error.message);
         continue;
       }
     }
-    
-    throw new Error('All free AI services are currently busy. Please try again in a moment.');
+    throw new Error('Groq services are busy. Please try again.');
   }
-
-
 
   // buildPrompt specifically designed for free iter openrouter.ai
   buildPrompt(studyMaterial, numQuestions, questionTypes, difficulty) {
