@@ -39,7 +39,8 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://quizzar.netlify.app',
   'https://quizzar-app.netlify.app',
-  'https://main--quizzar.netlify.app'
+  'https://main--quizzar.netlify.app',
+  'https://quizzar-black.vercel.app'
 ];
 
 const corsOptions = {
@@ -52,7 +53,8 @@ const corsOptions = {
       process.env.CLIENT_URL,
       'https://quizzar.netlify.app',
       'https://quizzar-app.netlify.app',
-      'https://main--quizzar.netlify.app'
+      'https://main--quizzar.netlify.app',
+      'https://quizzar-black.vercel.app'
     ].filter(Boolean);
 
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -90,7 +92,8 @@ app.options('*', cors({
     'http://localhost:3000',
     'https://quizzar.netlify.app',
     'https://quizzar-app.netlify.app',
-    'https://main--quizzar.netlify.app'
+    'https://main--quizzar.netlify.app',
+    'https://quizzar-black.vercel.app'
   ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
