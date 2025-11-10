@@ -7,6 +7,12 @@
   VITE_API_BASE_URL = "https://quizzar-llj0.onrender.com"
 
 [[redirects]]
+  from = "/api/*"
+  to = "https://quizzar-llj0.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

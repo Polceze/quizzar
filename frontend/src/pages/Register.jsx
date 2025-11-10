@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/useAuth';
 
 const Register = () => {
@@ -31,10 +32,21 @@ const Register = () => {
 
   const fetchSchools = async () => {
     try {
-      const res = await axios.get('/api/schools');
-      setSchools(res.data);
+      const res = await api.get('/api/schools'); 
+      
+      // Ensure the response data is an array before setting state
+      if (Array.isArray(res.data)) {
+        setSchools(res.data);
+      } else {
+        // If the backend returns an object (e.g., { message: '...' })
+        // or anything non-array, log it and safely set schools to empty array.
+        console.error('API returned non-array data for schools:', res.data);
+        setSchools([]); 
+      }
     } catch (err) {
       console.error('Error fetching schools:', err);
+      // On error, ensure schools is an empty array to prevent the map error
+      setSchools([]); 
     }
   };
 
