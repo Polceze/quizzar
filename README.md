@@ -1,6 +1,10 @@
 # Quizzar - AI-Powered Examination Platform
 
+<div align="center">
+
 [![PLP Final Project](https://img.shields.io/badge/PLP-July'25-Final--8A2BE2?style=for-the-badge)](https://www.powerlearnprojectafrica.org/)[![SDG 4 - Quality Education](https://img.shields.io/badge/SDG-4_Quality_Education-0A96D6?style=for-the-badge&logo=un&logoColor=white)](https://sdgs.un.org/goals/goal4)[![Academic Project](https://img.shields.io/badge/Final-Project-8A2BE2?style=for-the-badge)](https://github.com/polceze/quizzar)
+
+</div>
 
 ## 🎯 Overview
 
@@ -154,24 +158,24 @@ POST /api/auth/login        # User login
 
 ### Exam Management
 ```http
-GET    /api/exams           # List teacher's exams
-POST   /api/exams           # Create new exam
-PUT    /api/exams/:id       # Update exam
-DELETE /api/exams/:id       # Delete exam
-POST   /api/exams/:id/publish  # Publish exam
+GET    /api/exams               # List teacher's exams
+POST   /api/exams               # Create new exam
+PUT    /api/exams/:id           # Update exam
+DELETE /api/exams/:id           # Delete exam
+POST   /api/exams/:id/publish   # Publish exam
 ```
 
 ### AI Integration
 ```http
-POST /api/ai/generate-questions  # Generate questions from content
-GET  /api/ai/config             # Get AI service status
+POST /api/ai/generate-questions   # Generate questions from content
+GET  /api/ai/config               # Get AI service status
 ```
 
 ### Student Operations
 ```http
-GET /api/student/exams          # Available exams
-POST /api/student/exams/:id/attempt  # Submit exam attempt
-GET /api/student/analytics      # Performance analytics
+GET /api/student/exams                  # Available exams
+POST /api/student/exams/:id/attempt     # Submit exam attempt
+GET /api/student/analytics              # Performance analytics
 ```
 
 ## 🗄 Database Models
@@ -259,7 +263,7 @@ Configure production environment variables for:
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+We welcome contributions! Please follow the below steps:
 
 ### Development Workflow
 1. Fork the repository
@@ -270,7 +274,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📄 License
 
-This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the ISC License.
 
 ## 🆘 Support
 
@@ -288,7 +292,9 @@ For support and questions:
 
 <div align="center">
 
-**Built with ❤️ for the education community**
+[![PLP Final Project](https://img.shields.io/badge/PLP-July'25-Final--8A2BE2?style=for-the-badge)](https://www.powerlearnprojectafrica.org/)[![SDG 4 - Quality Education](https://img.shields.io/badge/SDG-4_Quality_Education-0A96D6?style=for-the-badge&logo=un&logoColor=white)](https://sdgs.un.org/goals/goal4)[![Academic Project](https://img.shields.io/badge/Final-Project-8A2BE2?style=for-the-badge)](https://github.com/polceze/quizzar)
+
+**Built with and for the ❤️ of quality accesible education**
 
 
 </div>
