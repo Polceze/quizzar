@@ -1,10 +1,11 @@
 class AIService {
   constructor() {
-    this.apiKey = process.env.GEMINI_API_KEY || process.env.AI_API_KEY;
+    this.apiKey = process.env.CLAUDE_API_KEY || process.env.AI_API_KEY;
     
-    // Get model from environment or use default
-    const model = process.env.AI_MODEL || 'gemini-2.0-flash-001';
-    this.apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    // Get model from environment or use default Claude model
+    const model = process.env.AI_MODEL || 'claude-3-haiku-20240307';
+    this.apiUrl = 'https://api.anthropic.com/v1/messages';
+    this.model = model;
     
     console.log('🔧 AI Service Configuration:');
     console.log('🔐 API Key present:', !!this.apiKey);
@@ -12,7 +13,7 @@ class AIService {
     console.log('🤖 Model:', model);
     
     if (!this.apiKey) {
-      console.error('❌ GEMINI_API_KEY is missing from environment variables');
+      console.error('❌ CLAUDE_API_KEY is missing from environment variables');
     }
   }
 
@@ -25,10 +26,10 @@ class AIService {
       
       const requestBody = this.buildRequestBody(prompt);
       
-      console.log('📤 Sending request to AI API...');
-      console.log('🌐 Endpoint:', this.getApiEndpoint());
+      console.log('📤 Sending request to Claude API...');
+      console.log('🌐 Endpoint:', this.apiUrl);
       
-      const response = await fetch(this.getApiEndpoint(), {
+      const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: this.getApiHeaders(),
         body: JSON.stringify(requestBody)
@@ -39,9 +40,8 @@ class AIService {
       if (!response.ok) {
         let errorDetail;
         try {
-          errorDetail = await response.text(); // Read as text first
+          errorDetail = await response.text();
           try {
-            // Try to parse as JSON for better error messages
             const errorJson = JSON.parse(errorDetail);
             errorDetail = JSON.stringify(errorJson);
           } catch {
@@ -51,12 +51,12 @@ class AIService {
           errorDetail = `Cannot read error response: ${e.message}`;
         }
         
-        console.error('❌ AI API error details:', errorDetail);
-        throw new Error(`AI API error: ${response.status} - ${errorDetail}`);
+        console.error('❌ Claude API error details:', errorDetail);
+        throw new Error(`Claude API error: ${response.status} - ${errorDetail}`);
       }
 
       const data = await response.json();
-      console.log('✅ AI API response received');
+      console.log('✅ Claude API response received');
       
       const text = this.extractResponseText(data);
       console.log('📄 Response content preview:', text.substring(0, 200) + '...');
@@ -71,76 +71,41 @@ class AIService {
     }
   }
 
-  // Helper methods for different AI providers
+  // Helper methods for Claude AI
   getApiEndpoint() {
-    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
-      // Gemini - API key in URL, ensure correct endpoint format
-      let baseUrl = this.apiUrl;
-      if (!baseUrl.includes(':generateContent')) {
-        baseUrl = baseUrl.replace(/\/[^/]*$/, ':generateContent');
-      }
-      return `${baseUrl}?key=${this.apiKey}`;
-    } else {
-      // Other providers
-      return this.apiUrl;
-    }
+    return this.apiUrl;
   }
 
   getApiHeaders() {
-    const headers = {
-      'Content-Type': 'application/json'
+    return {
+      'Content-Type': 'application/json',
+      'x-api-key': this.apiKey,
+      'anthropic-version': '2023-06-01'
     };
-
-    if (this.apiUrl.includes('openrouter.ai')) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
-      headers['HTTP-Referer'] = 'https://quizzar-black.vercel.app';
-      headers['X-Title'] = 'Quizzar App';
-    } else if (this.apiUrl.includes('api.mistral.ai') || this.apiUrl.includes('api.openai.com')) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
-    }
-    // Gemini doesn't need Authorization header - key is in URL
-
-    return headers;
   }
 
   buildRequestBody(prompt) {
-    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
-      // Gemini format
-      return {
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000,
-          topP: 0.8,
-          topK: 40
+    // Claude API format
+    return {
+      model: this.model,
+      max_tokens: 4000,
+      temperature: 0.7,
+      messages: [
+        {
+          role: "user",
+          content: prompt
         }
-      };
-    } else {
-      // OpenAI/Mistral/OpenRouter format
-      return {
-        model: this.model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000
-      };
-    }
+      ],
+      system: "You are an expert educational content creator. Generate exam questions based on provided study material. Always return valid JSON arrays without any additional text or markdown formatting."
+    };
   }
 
   extractResponseText(data) {
-    if (this.apiUrl.includes('generativelanguage.googleapis.com')) {
-      // Gemini format
-      if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-        return data.candidates[0].content.parts[0].text;
-      }
-    } else {
-      // OpenAI/Mistral/OpenRouter format
-      if (data.choices?.[0]?.message?.content) {
-        return data.choices[0].message.content;
-      }
+    // Claude API format
+    if (data.content && data.content[0] && data.content[0].text) {
+      return data.content[0].text;
     }
-    throw new Error('Unexpected response format from AI API');
+    throw new Error('Unexpected response format from Claude API');
   }
 
   async getErrorDetails(response) {
@@ -268,7 +233,7 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
       const testPrompt = "Reply with only the word 'Success'";
       const requestBody = this.buildRequestBody(testPrompt);
       
-      const response = await fetch(this.getApiEndpoint(), {
+      const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: this.getApiHeaders(),
         body: JSON.stringify(requestBody)
@@ -286,25 +251,21 @@ Generate the questions now. ONLY include ${questionTypes.join(' and ')} question
       
       return { 
         success: true, 
-        message: 'AI API connected successfully',
+        message: 'Claude API connected successfully',
         provider: this.getProviderName(),
         model: this.model
       };
     } catch (error) {
-      console.error('AI API Connection Error:', error);
+      console.error('Claude API Connection Error:', error);
       return { 
         success: false, 
-        message: `AI API connection failed: ${error.message}` 
+        message: `Claude API connection failed: ${error.message}` 
       };
     }
   }
 
   getProviderName() {
-    if (this.apiUrl.includes('generativelanguage.googleapis.com')) return 'Gemini';
-    if (this.apiUrl.includes('openrouter.ai')) return 'OpenRouter';
-    if (this.apiUrl.includes('api.mistral.ai')) return 'Mistral';
-    if (this.apiUrl.includes('api.openai.com')) return 'OpenAI';
-    return 'Unknown';
+    return 'Claude';
   }
 }
 

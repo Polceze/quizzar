@@ -100,7 +100,7 @@ export const generateQuestions = async (req, res) => {
         teacher: teacherId,
         unit: unitId,
         isAIGenerated: true,
-        aiModelUsed: 'DeepSeek',
+        aiModelUsed: 'ClaudeAI',
         aiGenerationNotes: `Generated from study material: ${studyMaterial.substring(0, 100)}...`
       };
 
