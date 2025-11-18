@@ -17,7 +17,7 @@ const ViewQuestionModal = ({ question, onClose, onEdit }) => {
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 text-white bg-red-400 rounded-lg hover:bg-red-500 transition"
+              className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
             >
               Close
             </button>

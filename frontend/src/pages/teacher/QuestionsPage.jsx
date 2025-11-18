@@ -116,13 +116,13 @@ const QuestionsPage = () => {
         <h1 className="text-3xl font-bold text-gray-800">Questions for: {unitName}</h1>
         <div className="flex gap-3">
           <button
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             onClick={() => setShowAIModal(true)}
           >
             🚀 AI Generate Questions
           </button>
           <button
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             onClick={() => {
               setEditingQuestion(null);
               setShowModal(true);
