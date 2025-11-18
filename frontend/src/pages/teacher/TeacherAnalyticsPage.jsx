@@ -125,8 +125,8 @@ const TeacherAnalyticsPage = () => {
 
       <div className="flex justify-between items-center mb-6 border-b pb-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Exam Analytics</h1>
-          <p className="text-gray-600">Track performance and student progress</p>
+          <h1 className="text-3xl font-bold text-gray-800">Results & Exam Analytics</h1>
+          <p className="text-gray-600">Manage results-release, Track performance, and view student progress</p>
         </div>
         {hasTeacherAccess ? (
           <Link

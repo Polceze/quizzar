@@ -17,13 +17,16 @@ const BatchResultManagementPage = () => {
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       
-      // Get teacher's exams
+      // Get teacher's exams - ONLY ARCHIVED ONES
       const examsRes = await axios.get('/api/exams', config);
       const examsData = examsRes.data;
+      
+      // Filter to only include archived exams
+      const archivedExams = examsData.filter(exam => exam.status === 'archived');
 
-      // Get detailed analytics for each exam to check result release status
+      // Get detailed analytics for each ARCHIVED exam to check result release status
       const examsWithResults = await Promise.all(
-        examsData.map(async (exam) => {
+        archivedExams.map(async (exam) => {
           try {
             const resultsRes = await axios.get(`/api/teacher/analytics/exams/${exam._id}`, config);
             const analytics = resultsRes.data;
@@ -246,9 +249,9 @@ const BatchResultManagementPage = () => {
 
         {exams.length === 0 ? (
           <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">No exams found.</p>
+            <p className="text-gray-500">No archived exams found.</p>
             <p className="text-sm text-gray-400 mt-2">
-              Create and publish exams to manage results.
+              Archive completed exams to manage result release.
             </p>
           </div>
         ) : (
