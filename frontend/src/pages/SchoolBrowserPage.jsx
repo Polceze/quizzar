@@ -21,7 +21,7 @@ const SchoolBrowserPage = () => {
       setSchools(res.data);
     } catch (err) {
       console.error('Error fetching schools:', err);
-      setError(err.response?.data?.message || 'Failed to load schools.');
+      setError(err.response?.data?.message || 'Failed to load schools. Backend may have spun down. Give it a moment then try again.');
     } finally {
       setLoading(false);
     }
