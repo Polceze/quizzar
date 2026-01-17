@@ -74,7 +74,7 @@ Quizzar is a comprehensive, AI-powered digital examination platform designed to 
 [![PNPM](https://img.shields.io/badge/PNPM-10.0%2B-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io)
 [![ESLint](https://img.shields.io/badge/ESLint-Code_Quality-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org)
 
-## Project Architecture
+## Project Directory
 
 ```text
 quizzar/
@@ -87,13 +87,18 @@ quizzar/
 │   │   ├── services/       # External service integrations
 │   │   └── utils/          # Helper functions
 │   └── scripts/            # Database utilities
-└── frontend/
-     │
-     └── src/               # React Vite Application
-        ├── components/     # Reusable UI components
-        ├── pages/          # Route components
-        ├── context/        # State management
-        └── utils/          # API clients & helpers
+├── frontend/
+│    │
+│    └── src/               # React Vite Application
+│       ├── components/     # Reusable UI components
+│       ├── pages/          # Route components
+│       ├── context/        # State management
+│       └── utils/          # API clients & helpers
+├── .gitignore
+├── LICENSE
+├── package.json
+├── pnpm-lock.yaml
+└── README.md
 ```
 
 ## Quick Start
